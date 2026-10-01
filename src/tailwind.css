@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+@plugin 'tailwindcss-primeui';
+
+/* Modo oscuro: PrimeNG y Tailwind comparten la clase .app-dark en <html> */
+@custom-variant dark (&:where(.app-dark, .app-dark *));
+
+/* Tokens de marca (docs/BRANDING.md). Usar estas clases, no hex sueltos. */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+
+  /* Tema claro "Lila nube" */
+  --color-cloud-from: #f3eeff;
+  --color-cloud-to: #e2d6ff;
+  --color-cloud-title: #2a1f5c;
+  --color-cloud-primary: #7b61ff;
+  --color-cloud-text: #5b5480;
+
+  /* Tema oscuro "Violeta noche" */
+  --color-night-from: #1c1433;
+  --color-night-to: #2d1f5e;
+  --color-night-title: #ffffff;
+  --color-night-subtitle: #c3b2ff;
+  --color-night-text: #b9aedb;
+  --color-night-primary-from: #b39cff;
+  --color-night-primary-to: #7c5cff;
+
+  /* Comunes */
+  --color-accent: #ffd23f;
+  --color-live: #ff5a5f;
+}

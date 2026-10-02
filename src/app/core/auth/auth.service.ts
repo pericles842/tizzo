@@ -3,7 +3,7 @@ import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CredentialPayload, RegisterPayload, SessionStatus, Specialty, User } from './auth.models';
+import { CredentialPayload, RegisterPayload, SessionStatus, Topic, User } from './auth.models';
 
 /**
  * Estado de la sesión en signals. El token vive en una cookie httpOnly que maneja el navegador:
@@ -74,8 +74,9 @@ export class AuthService {
     await firstValueFrom(this.http.post(`${this.api}/teacher/credentials`, form));
   }
 
-  getSpecialties(): Promise<Specialty[]> {
-    return firstValueFrom(this.http.get<Specialty[]>(`${this.api}/specialties`));
+  /** Temas para el paso "Tus intereses" del registro */
+  getTopics(): Promise<Topic[]> {
+    return firstValueFrom(this.http.get<Topic[]>(`${this.api}/topics`));
   }
 
   private setUser(user: User): void {

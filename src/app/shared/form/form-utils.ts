@@ -1,7 +1,31 @@
 import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn } from '@angular/forms';
 
-/** Mínimo una letra y un número (igual que el API) */
-export const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).+$/;
+/** Al menos una mayúscula y un número (igual que el API) */
+export const PASSWORD_PATTERN = /^(?=.*[A-ZÁÉÍÓÚÑ])(?=.*\d).+$/;
+
+/** Reglas de contraseña que se muestran en el registro (mismas que valida el API) */
+export const PASSWORD_RULES: { label: string; test: (value: string) => boolean }[] = [
+  { label: 'Mínimo 8 caracteres', test: (value) => value.length >= 8 },
+  { label: 'Una letra mayúscula', test: (value) => /[A-ZÁÉÍÓÚÑ]/.test(value) },
+  { label: 'Un número', test: (value) => /\d/.test(value) }
+];
+
+export type PasswordStrength = 0 | 1 | 2 | 3 | 4;
+
+/**
+ * Seguridad de la contraseña de 0 (vacía) a 4 (fuerte). Suma: largo >= 8, mayúscula, minúscula,
+ * número, símbolo y largo >= 12. 0-2 puntos = débil, 3 = regular, 4-5 = buena, 6 = fuerte.
+ */
+export function passwordStrength(value: string): PasswordStrength {
+  if (!value) return 0;
+  const points = [value.length >= 8, /[A-Z]/.test(value), /[a-z]/.test(value), /\d/.test(value), /[^A-Za-z0-9]/.test(value), value.length >= 12].filter(
+    Boolean
+  ).length;
+  if (points <= 2) return 1;
+  if (points === 3) return 2;
+  if (points <= 5) return 3;
+  return 4;
+}
 export const PHONE_PATTERN = /^\+?[\d\s()-]{7,30}$/;
 
 /** Límite de archivos, igual que el API (middlewares/upload.ts) */

@@ -1,227 +1,207 @@
 import { isPlatformBrowser } from '@angular/common';
-import {
-  Component,
-  ElementRef,
-  Injector,
-  OnDestroy,
-  OnInit,
-  PLATFORM_ID,
-  afterNextRender,
-  computed,
-  inject,
-  input,
-  signal,
-  viewChild
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectorRef, Component, ElementRef, Injector, OnInit, PLATFORM_ID, afterNextRender, computed, inject, input, signal, viewChild } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
+import { InputNumber } from 'primeng/inputnumber';
 import { Password } from 'primeng/password';
 import { Select } from 'primeng/select';
-import { InputNumber } from 'primeng/inputnumber';
-import { Textarea } from 'primeng/textarea';
 import { Message } from 'primeng/message';
 import { AuthService } from '../../core/auth/auth.service';
-import { OTHER_SPECIALTY_SLUG, RegisterPayload, Specialty, UserRole } from '../../core/auth/auth.models';
+import { RegisterPayload, Topic, UserRole } from '../../core/auth/auth.models';
 import { COUNTRIES } from '../../core/catalog/countries';
 import { apiErrorMessage, apiFieldErrors } from '../../core/http/api-error';
+import { AuthShell } from '../../shared/auth-shell/auth-shell';
+import { StepProgress } from '../../shared/step-progress/step-progress';
+import { PasswordStrength } from '../../shared/password-strength/password-strength';
+import { ChoiceCard } from '../../shared/choice-card/choice-card';
+import { TopicPicker } from '../../shared/topic-picker/topic-picker';
 import { FieldError } from '../../shared/form/field-error';
-import {
-  DOCUMENT_TYPES,
-  IMAGE_TYPES,
-  PASSWORD_PATTERN,
-  PHONE_PATTERN,
-  applyServerErrors,
-  checkFile,
-  focusFirstInvalid,
-  passwordsMatch,
-  validateGroup
-} from '../../shared/form/form-utils';
+import { PASSWORD_PATTERN, applyServerErrors, focusFirstInvalid, passwordsMatch, validateGroup } from '../../shared/form/form-utils';
 
-type StepId = 'role' | 'account' | 'profile' | 'credentials' | 'review';
+type StepId = 'personal' | 'password' | 'goal' | 'interests';
 
-interface Step {
+/** Textos de cada paso: parte 1 (panel de marca) y parte 2 (formulario) */
+interface StepCopy {
   id: StepId;
   label: string;
-}
-
-/** Credencial agregada en el asistente; se sube después de crear la cuenta */
-interface PendingCredential {
-  id: number;
+  asideHeading: string;
+  asideDescription: string;
   title: string;
-  institution: string;
-  issued_at: string | null;
-  credential_number: string | null;
-  file: File;
+  subtitle: string;
 }
 
-const STUDENT_STEPS: Step[] = [
-  { id: 'role', label: 'Tipo de cuenta' },
-  { id: 'account', label: 'Tus datos' }
+const STEPS: StepCopy[] = [
+  {
+    id: 'personal',
+    label: 'Datos personales',
+    asideHeading: 'Crea tu cuenta y empieza en minutos',
+    asideDescription: 'Aprende o enseña en vivo con personas reales.',
+    title: 'Cuéntanos sobre ti',
+    subtitle: 'Con estos datos creamos tu cuenta de Tizzo.'
+  },
+  {
+    id: 'password',
+    label: 'Contraseña',
+    asideHeading: 'Protege tu cuenta',
+    asideDescription: 'Una contraseña segura mantiene a salvo tus clases, pagos y diplomas.',
+    title: 'Crea tu contraseña',
+    subtitle: 'Elige una contraseña que puedas recordar y que nadie más adivine.'
+  },
+  {
+    id: 'goal',
+    label: 'Tu objetivo',
+    asideHeading: 'Cuéntanos qué buscas',
+    asideDescription: 'Así personalizamos tu experiencia desde el primer día.',
+    title: '¿Qué quieres hacer en Tizzo?',
+    subtitle: 'Elige una opción. Podrás cambiarla más adelante.'
+  },
+  {
+    id: 'interests',
+    label: 'Tus intereses',
+    asideHeading: 'Encuentra al profe ideal',
+    asideDescription: 'Elige tus temas y te mostramos profes que dan clases en vivo.',
+    title: '¿Qué quieres aprender?',
+    subtitle: 'Elige uno o varios temas. Podrás cambiarlos cuando quieras.'
+  }
 ];
 
-const TEACHER_STEPS: Step[] = [
-  ...STUDENT_STEPS,
-  { id: 'profile', label: 'Perfil profesional' },
-  { id: 'credentials', label: 'Credenciales' },
-  { id: 'review', label: 'Confirmar' }
-];
+/** El último paso cambia según el objetivo: aprender (estudiante) o enseñar (profe) */
+const TEACHER_INTERESTS: Partial<StepCopy> = {
+  asideHeading: 'Comparte lo que sabes',
+  asideDescription: 'Elige los temas que enseñas y te conectamos con estudiantes que quieren aprender en vivo.',
+  title: '¿Qué quieres enseñar?'
+};
 
-const MAX_CREDENTIALS = 10;
 const DEFAULT_TIMEZONE = 'America/Caracas';
 
 /**
- * Registro paso a paso. El primer paso define si la cuenta es de estudiante o de profesor.
- * - Estudiante: tipo de cuenta -> datos personales.
- * - Profesor: ... -> perfil profesional -> credenciales (opcional) -> confirmar.
- * La cuenta se crea al final en una sola petición; la foto y las credenciales se suben después con la sesión ya abierta.
+ * Registro en 4 pasos (diseño de Figma): datos personales -> contraseña -> objetivo -> intereses.
+ * La cuenta se crea al final en una sola petición. El layout es AuthShell (parte 1 + parte 2).
  */
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, ButtonDirective, InputText, Password, Select, InputNumber, Textarea, Message, FieldError],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    ButtonDirective,
+    InputText,
+    InputNumber,
+    Password,
+    Select,
+    Message,
+    AuthShell,
+    StepProgress,
+    PasswordStrength,
+    ChoiceCard,
+    TopicPicker,
+    FieldError
+  ],
   templateUrl: './register.html'
 })
-export class Register implements OnInit, OnDestroy {
+export class Register implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly stepHeading = viewChild<ElementRef<HTMLElement>>('stepHeading');
   private readonly stepContainer = viewChild<ElementRef<HTMLElement>>('stepContainer');
 
-  /** ?rol=estudiante | ?rol=profe (desde los botones del home) */
+  /** ?rol=estudiante | ?rol=profe (desde el home): deja preseleccionado el objetivo */
   readonly rol = input<string>();
 
   protected readonly countries = COUNTRIES;
-  protected readonly maxCredentials = MAX_CREDENTIALS;
-  protected readonly today = new Date().toISOString().slice(0, 10);
+  protected readonly totalSteps = STEPS.length;
   protected readonly timezone = this.isBrowser ? Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_TIMEZONE : DEFAULT_TIMEZONE;
 
   // ---- Pasos ----
-  protected readonly role = signal<UserRole | null>(null);
-  protected readonly steps = computed(() => (this.role() === 'teacher' ? TEACHER_STEPS : STUDENT_STEPS));
   protected readonly stepIndex = signal(0);
-  protected readonly currentStep = computed(() => this.steps()[this.stepIndex()]);
-  protected readonly isLastStep = computed(() => this.stepIndex() === this.steps().length - 1);
-  /** id del <form> del paso actual, si tiene; el botón Continuar se asocia a él */
-  protected readonly stepFormId = computed(() => {
-    const id = this.currentStep().id;
-    return id === 'account' ? 'account-form' : id === 'profile' ? 'profile-form' : null;
+  protected readonly role = signal<UserRole | null>(null);
+  protected readonly step = computed<StepCopy>(() => {
+    const step = STEPS[this.stepIndex()];
+    return step.id === 'interests' && this.role() === 'teacher' ? { ...step, ...TEACHER_INTERESTS } : step;
   });
 
   // ---- Formularios ----
-  protected readonly accountForm = this.fb.group(
+  protected readonly personalForm = this.fb.group({
+    first_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
+    last_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    country_code: this.fb.control<string | null>(null, Validators.required),
+    age: this.fb.control<number | null>(null, [Validators.required, Validators.min(10), Validators.max(100)])
+  });
+
+  protected readonly passwordForm = this.fb.group(
     {
-      first_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
-      last_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
-      phone: ['', [Validators.pattern(PHONE_PATTERN)]],
-      country_code: this.fb.control<string | null>(null),
       password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72), Validators.pattern(PASSWORD_PATTERN)]],
       confirm_password: ['', Validators.required]
     },
     { validators: passwordsMatch('password', 'confirm_password') }
   );
 
-  protected readonly teacherForm = this.fb.group({
-    headline: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(160)]],
-    specialty_id: this.fb.control<number | null>(null, Validators.required),
-    specialty: [''],
-    years_experience: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(70)]),
-    bio: ['', [Validators.required, Validators.minLength(30), Validators.maxLength(3000)]]
-  });
+  /** Valor de la contraseña como signal, para el medidor de seguridad */
+  protected readonly passwordValue = toSignal(this.passwordForm.controls.password.valueChanges, { initialValue: '' });
 
-  protected readonly credentialForm = this.fb.group({
-    title: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(180)]],
-    institution: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(180)]],
-    issued_at: [''],
-    credential_number: ['', Validators.maxLength(80)]
-  });
-
-  // ---- Archivos ----
-  protected readonly avatarFile = signal<File | null>(null);
-  protected readonly avatarPreview = signal<string | null>(null);
-  protected readonly avatarError = signal<string | null>(null);
-  protected readonly credentialFile = signal<File | null>(null);
-  protected readonly credentialFileError = signal<string | null>(null);
-  protected readonly credentials = signal<PendingCredential[]>([]);
-  private credentialSeq = 0;
-
-  // ---- Catálogo de especialidades ----
-  protected readonly specialties = signal<Specialty[]>([]);
-  protected readonly specialtiesError = signal<string | null>(null);
-  protected readonly isOtherSpecialty = signal(false);
+  // ---- Objetivo e intereses ----
+  protected readonly goalError = signal<string | null>(null);
+  protected readonly topics = signal<Topic[]>([]);
+  protected readonly topicsError = signal<string | null>(null);
+  protected readonly selectedTopics = signal<number[]>([]);
+  protected readonly interestsError = signal<string | null>(null);
 
   // ---- Envío ----
   protected readonly submitting = signal(false);
-
-  /** Texto e icono del botón principal según el paso */
-  protected readonly nextLabel = computed(() => {
-    if (this.submitting()) return 'Creando tu cuenta…';
-    if (this.isLastStep()) return 'Crear cuenta';
-    if (this.currentStep().id === 'credentials' && !this.credentials().length) return 'Omitir por ahora';
-    return 'Continuar';
-  });
-  protected readonly nextIcon = computed(() => (this.isLastStep() || this.submitting() ? '' : 'pi pi-arrow-right'));
   protected readonly serverError = signal<string | null>(null);
-  /** Cuenta creada pero alguna subida falló: se muestra la pantalla final con el detalle */
-  protected readonly uploadWarnings = signal<string[] | null>(null);
-
-  constructor() {
-    // "Otro" habilita (y exige) el texto libre de la especialidad
-    this.teacherForm.controls.specialty_id.valueChanges.pipe(takeUntilDestroyed()).subscribe((id) => {
-      const isOther = this.specialties().find((s) => s.id === id)?.slug === OTHER_SPECIALTY_SLUG;
-      const custom = this.teacherForm.controls.specialty;
-      this.isOtherSpecialty.set(isOther);
-      custom.setValidators(isOther ? [Validators.required, Validators.minLength(2), Validators.maxLength(120)] : null);
-      if (!isOther) custom.setValue('');
-      custom.updateValueAndValidity();
-    });
-  }
 
   ngOnInit(): void {
     const preset = this.rol() === 'profe' ? 'teacher' : this.rol() === 'estudiante' ? 'student' : null;
-    if (preset) {
-      this.role.set(preset);
-      this.stepIndex.set(1);
-    }
+    if (preset) this.role.set(preset);
 
     // El catálogo solo se pide en el navegador (esta página se prerenderiza)
-    if (this.isBrowser) void this.loadSpecialties();
-  }
-
-  ngOnDestroy(): void {
-    this.revokePreview();
+    if (this.isBrowser) void this.loadTopics();
   }
 
   // ---------------- Navegación ----------------
-
-  protected selectRole(role: UserRole): void {
-    this.role.set(role);
-    this.goTo(1);
-  }
 
   protected back(): void {
     if (this.stepIndex() > 0) this.goTo(this.stepIndex() - 1);
   }
 
   protected next(): void {
-    if (!this.validateStep(this.currentStep().id)) return;
-    if (this.isLastStep()) {
+    if (!this.validateStep(this.step().id)) return;
+    if (this.stepIndex() === STEPS.length - 1) {
       void this.submit();
       return;
     }
     this.goTo(this.stepIndex() + 1);
   }
 
+  protected selectRole(role: string | null): void {
+    this.role.set(role as UserRole | null);
+    this.goalError.set(null);
+  }
+
+  protected selectTopics(ids: number[]): void {
+    this.selectedTopics.set(ids);
+    if (ids.length) this.interestsError.set(null);
+  }
+
   private validateStep(step: StepId): boolean {
     let valid = true;
-    if (step === 'role') valid = this.role() !== null;
-    if (step === 'account') valid = validateGroup(this.accountForm) && !this.avatarError();
-    if (step === 'profile') valid = validateGroup(this.teacherForm);
+    if (step === 'personal') valid = validateGroup(this.personalForm);
+    if (step === 'password') valid = validateGroup(this.passwordForm);
+    if (step === 'goal') {
+      valid = this.role() !== null;
+      this.goalError.set(valid ? null : 'Elige si quieres aprender o enseñar.');
+    }
+    if (step === 'interests') {
+      valid = this.selectedTopics().length > 0;
+      this.interestsError.set(valid ? null : 'Elige al menos un tema.');
+    }
 
     if (!valid) focusFirstInvalid(this.stepContainer()?.nativeElement);
     return valid;
@@ -234,201 +214,89 @@ export class Register implements OnInit, OnDestroy {
     afterNextRender(() => this.stepHeading()?.nativeElement.focus(), { injector: this.injector });
   }
 
-  // ---------------- Foto de perfil ----------------
+  // ---------------- Datos ----------------
 
-  protected onAvatarSelected(event: Event): void {
-    const inputEl = event.target as HTMLInputElement;
-    const file = inputEl.files?.[0];
-    inputEl.value = ''; // permite volver a elegir el mismo archivo
-    if (!file) return;
-
-    const error = checkFile(file, IMAGE_TYPES, 'JPG, PNG, WEBP o GIF');
-    this.avatarError.set(error);
-    if (error) return;
-
-    this.revokePreview();
-    this.avatarFile.set(file);
-    this.avatarPreview.set(URL.createObjectURL(file));
-  }
-
-  protected removeAvatar(): void {
-    this.revokePreview();
-    this.avatarFile.set(null);
-    this.avatarPreview.set(null);
-    this.avatarError.set(null);
-  }
-
-  private revokePreview(): void {
-    const url = this.avatarPreview();
-    if (url) URL.revokeObjectURL(url);
-  }
-
-  // ---------------- Credenciales ----------------
-
-  protected onCredentialFileSelected(event: Event): void {
-    const inputEl = event.target as HTMLInputElement;
-    const file = inputEl.files?.[0] ?? null;
-    inputEl.value = '';
-    if (!file) return;
-
-    const error = checkFile(file, DOCUMENT_TYPES, 'PDF, JPG, PNG, WEBP o GIF');
-    this.credentialFileError.set(error);
-    this.credentialFile.set(error ? null : file);
-  }
-
-  protected addCredential(container: HTMLElement): void {
-    const formOk = validateGroup(this.credentialForm);
-    const file = this.credentialFile();
-    if (!file) this.credentialFileError.set('Adjunta el archivo del título (PDF o imagen).');
-    if (!formOk || !file) {
-      focusFirstInvalid(container);
-      return;
-    }
-
-    const value = this.credentialForm.getRawValue();
-    this.credentials.update((list) => [
-      ...list,
-      {
-        id: ++this.credentialSeq,
-        title: value.title.trim(),
-        institution: value.institution.trim(),
-        issued_at: value.issued_at || null,
-        credential_number: value.credential_number.trim() || null,
-        file
-      }
-    ]);
-    this.credentialForm.reset();
-    this.credentialFile.set(null);
-    this.credentialFileError.set(null);
-  }
-
-  protected removeCredential(id: number): void {
-    this.credentials.update((list) => list.filter((item) => item.id !== id));
-  }
-
-  protected formatSize(bytes: number): string {
-    return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  }
-
-  /** Especialidad a mostrar en el resumen: la del catálogo o el texto libre de "Otro" */
-  protected specialtyName(): string | null {
-    const { specialty_id, specialty } = this.teacherForm.getRawValue();
-    if (this.isOtherSpecialty()) return specialty.trim() || null;
-    return this.specialties().find((item) => item.id === specialty_id)?.name ?? null;
-  }
-
-  protected countryName(code: string | null): string | null {
-    return this.countries.find((country) => country.code === code)?.name ?? null;
-  }
-
-  // ---------------- Envío ----------------
-
-  private async loadSpecialties(): Promise<void> {
-    this.specialtiesError.set(null);
+  private async loadTopics(): Promise<void> {
+    this.topicsError.set(null);
     try {
-      this.specialties.set(await this.auth.getSpecialties());
+      this.topics.set(await this.auth.getTopics());
     } catch (err) {
-      this.specialtiesError.set(apiErrorMessage(err));
+      this.topicsError.set(apiErrorMessage(err));
     }
   }
 
-  protected retrySpecialties(): void {
-    void this.loadSpecialties();
+  protected retryTopics(): void {
+    void this.loadTopics();
   }
 
   private buildPayload(): RegisterPayload {
-    const account = this.accountForm.getRawValue();
-    const payload: RegisterPayload = {
+    const personal = this.personalForm.getRawValue();
+    return {
       role: this.role()!,
-      first_name: account.first_name.trim(),
-      last_name: account.last_name.trim(),
-      email: account.email.trim(),
-      password: account.password,
-      phone: account.phone.trim() || null,
-      country_code: account.country_code,
+      first_name: personal.first_name.trim(),
+      last_name: personal.last_name.trim(),
+      email: personal.email.trim(),
+      password: this.passwordForm.controls.password.value,
+      country_code: personal.country_code!,
+      age: personal.age!,
+      topic_ids: this.selectedTopics(),
       timezone: this.timezone
     };
-
-    if (this.role() === 'teacher') {
-      const teacher = this.teacherForm.getRawValue();
-      payload.teacher = {
-        headline: teacher.headline.trim(),
-        specialty_id: teacher.specialty_id!,
-        specialty: this.isOtherSpecialty() ? teacher.specialty.trim() : null,
-        years_experience: teacher.years_experience,
-        bio: teacher.bio.trim()
-      };
-    }
-    return payload;
   }
 
   private async submit(): Promise<void> {
     this.submitting.set(true);
     this.serverError.set(null);
-
     try {
       await this.auth.register(this.buildPayload());
+      await this.router.navigateByUrl('/app');
     } catch (err) {
       this.handleRegisterError(err);
+    } finally {
       this.submitting.set(false);
-      return;
     }
-
-    // Con la sesión ya abierta se suben los archivos. Si algo falla, la cuenta igual queda creada.
-    const warnings: string[] = [];
-    const avatar = this.avatarFile();
-    if (avatar) {
-      try {
-        await this.auth.uploadAvatar(avatar);
-      } catch (err) {
-        warnings.push(`Tu foto de perfil: ${apiErrorMessage(err)}`);
-      }
-    }
-    for (const credential of this.credentials()) {
-      try {
-        await this.auth.addCredential(credential);
-      } catch (err) {
-        warnings.push(`La credencial "${credential.title}": ${apiErrorMessage(err)}`);
-      }
-    }
-
-    this.submitting.set(false);
-    if (warnings.length) {
-      this.uploadWarnings.set(warnings);
-      return;
-    }
-    await this.router.navigateByUrl('/app');
   }
 
-  /** Pinta los errores del API en sus campos y vuelve al paso donde está el primero */
+  /**
+   * Vuelve al paso donde está el primer error del API y lo pinta en su campo.
+   * Los errores se aplican DESPUÉS de mostrar el paso: al montarse, el formulario se revalida
+   * y borraría un error puesto antes.
+   */
   private handleRegisterError(err: unknown): void {
-    const account = this.accountForm.controls;
-    const teacher = this.teacherForm.controls;
-    const applied = applyServerErrors(apiFieldErrors(err), {
-      first_name: account.first_name,
-      last_name: account.last_name,
-      email: account.email,
-      password: account.password,
-      phone: account.phone,
-      country_code: account.country_code,
-      'teacher.headline': teacher.headline,
-      'teacher.specialty_id': teacher.specialty_id,
-      'teacher.specialty': teacher.specialty,
-      'teacher.years_experience': teacher.years_experience,
-      'teacher.bio': teacher.bio
-    });
+    const fields = apiFieldErrors(err);
+    const keys = Object.keys(fields);
+    const personalKeys = ['first_name', 'last_name', 'email', 'country_code', 'age'];
+    const target: StepId | null = keys.some((key) => personalKeys.includes(key))
+      ? 'personal'
+      : keys.includes('password')
+        ? 'password'
+        : keys.includes('role')
+          ? 'goal'
+          : keys.includes('topic_ids')
+            ? 'interests'
+            : null;
 
-    if (!applied.length) {
-      this.serverError.set(apiErrorMessage(err));
-      return;
-    }
-
-    const target: StepId = applied.some((key) => !key.startsWith('teacher.')) ? 'account' : 'profile';
-    this.goTo(this.steps().findIndex((step) => step.id === target));
+    if (target && target !== this.step().id) this.goTo(STEPS.findIndex((step) => step.id === target));
     this.serverError.set(apiErrorMessage(err));
-  }
+    if (fields['role']) this.goalError.set(fields['role']);
+    if (fields['topic_ids']) this.interestsError.set(fields['topic_ids']);
 
-  protected goToApp(): void {
-    void this.router.navigateByUrl('/app');
+    afterNextRender(
+      () => {
+        const personal = this.personalForm.controls;
+        applyServerErrors(fields, {
+          first_name: personal.first_name,
+          last_name: personal.last_name,
+          email: personal.email,
+          country_code: personal.country_code,
+          age: personal.age,
+          password: this.passwordForm.controls.password
+        });
+        // El error queda en el control (no es un signal): hay que avisar a la vista (zoneless)
+        this.cdr.markForCheck();
+        focusFirstInvalid(this.stepContainer()?.nativeElement);
+      },
+      { injector: this.injector }
+    );
   }
 }

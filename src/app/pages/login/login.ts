@@ -8,11 +8,12 @@ import { Message } from 'primeng/message';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { FieldError } from '../../shared/form/field-error';
+import { AuthShell } from '../../shared/auth-shell/auth-shell';
 import { focusFirstInvalid, validateGroup } from '../../shared/form/form-utils';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, ButtonDirective, InputText, Password, Message, FieldError],
+  imports: [ReactiveFormsModule, RouterLink, ButtonDirective, InputText, Password, Message, FieldError, AuthShell],
   templateUrl: './login.html'
 })
 export class Login {

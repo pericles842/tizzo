@@ -1,14 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-/** Logo provisional: "tizzo" + punto rojo de "en vivo" (el logo oficial está por definir) */
+/**
+ * Logo provisional: "tizzo" + punto rojo de "en vivo" (el logo oficial está por definir).
+ * `inverse` = versión blanca, para usar sobre el degradado de marca.
+ */
 @Component({
   selector: 'app-logo',
   imports: [RouterLink],
   template: `
     <a
       routerLink="/"
-      class="tz-focus inline-flex items-center gap-1.5 rounded-lg font-display text-2xl font-semibold tracking-tight text-tz-title"
+      class="tz-focus inline-flex items-center gap-1.5 rounded-lg font-display text-2xl font-semibold tracking-tight"
+      [class.text-tz-title]="!inverse()"
+      [class.text-white]="inverse()"
       aria-label="Tizzo, ir al inicio"
     >
       tizzo
@@ -16,4 +21,6 @@ import { RouterLink } from '@angular/router';
     </a>
   `
 })
-export class Logo {}
+export class Logo {
+  readonly inverse = input(false);
+}

@@ -1,513 +1,173 @@
-﻿<section class="tz-container flex justify-center py-10 sm:py-14">
-  <div class="w-full max-w-2xl">
-    @if (uploadWarnings(); as warnings) {
-      <!-- Cuenta creada, pero alguna subida falló -->
-      <div class="tz-card p-7 sm:p-10" role="status">
-        <h1 class="text-3xl font-semibold tracking-tight">¡Tu cuenta está lista!</h1>
-        <p class="mt-3">No pudimos subir algunos archivos. Podrás volver a intentarlo desde tu perfil.</p>
-        <ul class="mt-5 space-y-2">
-          @for (warning of warnings; track warning) {
-            <li class="flex items-start gap-2 text-sm">
-              <i class="pi pi-exclamation-triangle mt-0.5 text-amber-500" aria-hidden="true"></i>{{ warning }}
-            </li>
-          }
-        </ul>
-        <button pButton type="button" label="Continuar" class="mt-8" (click)="goToApp()"></button>
-      </div>
-    } @else {
-      <header class="mb-6 px-1">
-        <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Crea tu cuenta</h1>
-        <p class="mt-2">
-          ¿Ya tienes una?
-          <a routerLink="/ingresar" class="tz-focus rounded font-semibold text-tz-subtitle underline-offset-4 hover:underline">Ingresa</a>
-        </p>
-      </header>
+﻿<app-auth-shell [heading]="step().asideHeading" [description]="step().asideDescription">
+  <p authTop class="text-tz-body">
+    ¿Ya tienes cuenta?
+    <a routerLink="/ingresar" class="tz-focus rounded font-semibold text-tz-subtitle underline-offset-4 hover:underline">Entrar</a>
+  </p>
 
-      <!-- Indicador de pasos -->
-      <!-- Solo el paso actual muestra su nombre: el indicador cabe en una línea en cualquier pantalla -->
-      <nav aria-label="Progreso del registro" class="mb-6 px-1">
-        <ol class="flex items-center gap-2">
-          @for (step of steps(); track step.id; let i = $index; let last = $last) {
-            <li class="flex items-center gap-2" [attr.aria-current]="i === stepIndex() ? 'step' : null">
-              <span
-                class="flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors"
-                [class]="
-                  i < stepIndex()
-                    ? 'bg-tz-subtitle text-white dark:text-[#1c1433]'
-                    : i === stepIndex()
-                      ? 'border-2 border-tz-subtitle text-tz-subtitle'
-                      : 'border border-tz-line text-tz-body'
-                "
-              >
-                @if (i < stepIndex()) {
-                  <i class="pi pi-check text-[0.625rem]" aria-hidden="true"></i>
-                  <span class="sr-only">Completado:</span>
-                } @else {
-                  {{ i + 1 }}
-                }
-              </span>
-              <span class="text-sm" [class]="i === stepIndex() ? 'font-semibold whitespace-nowrap text-tz-title' : 'sr-only'">
-                {{ step.label }}
-              </span>
-              @if (!last) {
-                <span class="h-px w-4 bg-tz-line sm:w-8" aria-hidden="true"></span>
-              }
-            </li>
-          }
-        </ol>
-      </nav>
+  <app-step-progress [current]="stepIndex() + 1" [total]="totalSteps" [label]="step().label" />
 
-      <div #stepContainer class="tz-card p-6 sm:p-9">
-        <h2 #stepHeading tabindex="-1" class="text-xl font-semibold outline-none sm:text-2xl">
-          @switch (currentStep().id) {
-            @case ('role') { ¿Cómo quieres usar Tizzo? }
-            @case ('account') { Tus datos }
-            @case ('profile') { Tu perfil profesional }
-            @case ('credentials') { Tus credenciales }
-            @case ('review') { Revisa y confirma }
-          }
-        </h2>
+  <div #stepContainer class="mt-6">
+    <h2 #stepHeading tabindex="-1" class="text-2xl font-semibold outline-none sm:text-3xl">{{ step().title }}</h2>
+    <p class="mt-2 text-sm">{{ step().subtitle }}</p>
 
-        @if (serverError(); as message) {
-          <p-message severity="error" styleClass="mt-5" role="alert">{{ message }}</p-message>
-        }
+    @if (serverError(); as message) {
+      <p-message severity="error" styleClass="mt-5" role="alert">{{ message }}</p-message>
+    }
 
-        @switch (currentStep().id) {
-          <!-- ============ PASO: TIPO DE CUENTA ============ -->
-          @case ('role') {
-            <p class="mt-2">Elige una opción. Podrás crear cursos o tomarlos según tu tipo de cuenta.</p>
-            <div class="mt-6 grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de cuenta">
-              <button
-                type="button"
-                role="radio"
-                [attr.aria-checked]="role() === 'student'"
-                class="tz-focus group rounded-2xl border-2 p-5 text-left transition-colors hover:border-tz-subtitle"
-                [class]="role() === 'student' ? 'border-tz-subtitle bg-tz-soft' : 'border-tz-line'"
-                (click)="selectRole('student')"
-              >
-                <span class="flex size-11 items-center justify-center rounded-xl bg-tz-soft text-tz-subtitle">
-                  <i class="pi pi-book text-xl" aria-hidden="true"></i>
-                </span>
-                <span class="mt-4 block font-display text-lg font-semibold text-tz-title">Soy estudiante</span>
-                <span class="mt-1 block text-sm">Quiero aprender con profes reales en clases en vivo.</span>
-              </button>
-
-              <button
-                type="button"
-                role="radio"
-                [attr.aria-checked]="role() === 'teacher'"
-                class="tz-focus group rounded-2xl border-2 p-5 text-left transition-colors hover:border-tz-subtitle"
-                [class]="role() === 'teacher' ? 'border-tz-subtitle bg-tz-soft' : 'border-tz-line'"
-                (click)="selectRole('teacher')"
-              >
-                <span class="flex size-11 items-center justify-center rounded-xl bg-tz-accent text-[#2a1f5c]">
-                  <i class="pi pi-video text-xl" aria-hidden="true"></i>
-                </span>
-                <span class="mt-4 block font-display text-lg font-semibold text-tz-title">Soy profe</span>
-                <span class="mt-1 block text-sm">Quiero dar clases en vivo y ponerle precio a lo que sé.</span>
-              </button>
+    @switch (step().id) {
+      <!-- ============ PASO 1: DATOS PERSONALES ============ -->
+      @case ('personal') {
+        <form id="step-form" class="mt-6 space-y-5" [formGroup]="personalForm" (ngSubmit)="next()" novalidate>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="first_name" class="tz-label">Nombre</label>
+              <input pInputText id="first_name" formControlName="first_name" autocomplete="given-name" class="w-full" aria-describedby="first_name-error" />
+              <app-field-error errorId="first_name-error" [control]="personalForm.controls.first_name" />
             </div>
-          }
-
-          <!-- ============ PASO: DATOS PERSONALES ============ -->
-          @case ('account') {
-            <p class="mt-2">
-              Te registras como <strong class="text-tz-title">{{ role() === 'teacher' ? 'profe' : 'estudiante' }}</strong>.
-            </p>
-
-            <form id="account-form" class="mt-6 space-y-5" [formGroup]="accountForm" (ngSubmit)="next()" novalidate>
-              <!-- Foto (opcional) -->
-              <div class="flex items-center gap-4">
-                <div class="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-tz-line bg-tz-soft">
-                  @if (avatarPreview(); as preview) {
-                    <img [src]="preview" alt="Vista previa de tu foto" class="size-full object-cover" />
-                  } @else {
-                    <i class="pi pi-user text-2xl text-tz-subtitle" aria-hidden="true"></i>
-                  }
-                </div>
-                <div>
-                  <span class="tz-label mb-1">Foto de perfil <span class="font-normal text-tz-body">(opcional)</span></span>
-                  <div class="flex flex-wrap gap-1">
-                    <label
-                      pButton
-                      severity="secondary"
-                      [text]="true"
-                      icon="pi pi-upload"
-                      [label]="avatarFile() ? 'Cambiar' : 'Subir foto'"
-                      class="-ml-3 cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-tz-subtitle"
-                    >
-                      <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onAvatarSelected($event)" />
-                    </label>
-                    @if (avatarFile()) {
-                      <button pButton type="button" label="Quitar" severity="secondary" [text]="true" (click)="removeAvatar()"></button>
-                    }
-                  </div>
-                  @if (avatarError(); as error) {
-                    <p class="text-sm text-red-600 dark:text-red-300" role="alert">{{ error }}</p>
-                  }
-                </div>
-              </div>
-
-              <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label for="first_name" class="tz-label">Nombre</label>
-                  <input pInputText id="first_name" formControlName="first_name" autocomplete="given-name" class="w-full" aria-describedby="first_name-error" />
-                  <app-field-error id="first_name-error" [control]="accountForm.controls.first_name" />
-                </div>
-                <div>
-                  <label for="last_name" class="tz-label">Apellido</label>
-                  <input pInputText id="last_name" formControlName="last_name" autocomplete="family-name" class="w-full" aria-describedby="last_name-error" />
-                  <app-field-error id="last_name-error" [control]="accountForm.controls.last_name" />
-                </div>
-              </div>
-
-              <div>
-                <label for="reg-email" class="tz-label">Correo</label>
-                <input pInputText id="reg-email" type="email" formControlName="email" autocomplete="email" class="w-full" aria-describedby="reg-email-error" />
-                <app-field-error id="reg-email-error" [control]="accountForm.controls.email" />
-              </div>
-
-              <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label for="phone" class="tz-label">Teléfono <span class="font-normal text-tz-body">(opcional)</span></label>
-                  <input
-                    pInputText
-                    id="phone"
-                    type="tel"
-                    formControlName="phone"
-                    autocomplete="tel"
-                    placeholder="+58 412 1234567"
-                    class="w-full"
-                    aria-describedby="phone-error"
-                  />
-                  <app-field-error id="phone-error" [control]="accountForm.controls.phone" patternMessage="Escribe un teléfono válido, con código de país." />
-                </div>
-                <div>
-                  <label for="country" class="tz-label">País <span class="font-normal text-tz-body">(opcional)</span></label>
-                  <p-select
-                    inputId="country"
-                    formControlName="country_code"
-                    [options]="countries"
-                    optionLabel="name"
-                    optionValue="code"
-                    placeholder="Selecciona tu país"
-                    [filter]="true"
-                    filterPlaceholder="Buscar país"
-                    emptyFilterMessage="Sin resultados"
-                    [showClear]="true"
-                    appendTo="body"
-                    [fluid]="true"
-                  />
-                </div>
-              </div>
-
-              <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label for="reg-password" class="tz-label">Contraseña</label>
-                  <p-password inputId="reg-password" formControlName="password" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="new-password" />
-                  <app-field-error
-                    id="reg-password-error"
-                    [control]="accountForm.controls.password"
-                    patternMessage="Debe tener al menos una letra y un número."
-                  />
-                  @if (!(accountForm.controls.password.touched && accountForm.controls.password.invalid)) {
-                    <p class="tz-hint">Mínimo 8 caracteres, con al menos una letra y un número.</p>
-                  }
-                </div>
-                <div>
-                  <label for="confirm_password" class="tz-label">Confirma tu contraseña</label>
-                  <p-password
-                    inputId="confirm_password"
-                    formControlName="confirm_password"
-                    [feedback]="false"
-                    [toggleMask]="true"
-                    [fluid]="true"
-                    autocomplete="new-password"
-                  />
-                  <app-field-error id="confirm_password-error" [control]="accountForm.controls.confirm_password" />
-                </div>
-              </div>
-
-              <p class="tz-hint flex items-center gap-1.5">
-                <i class="pi pi-globe text-xs" aria-hidden="true"></i> Zona horaria detectada: {{ timezone }}
-              </p>
-
-            </form>
-          }
-
-          <!-- ============ PASO: PERFIL PROFESIONAL ============ -->
-          @case ('profile') {
-            <p class="mt-2">Esto es lo que verán tus estudiantes. El equipo de Tizzo lo revisará antes de aprobarte.</p>
-
-            <form id="profile-form" class="mt-6 space-y-5" [formGroup]="teacherForm" (ngSubmit)="next()" novalidate>
-              <div>
-                <label for="headline" class="tz-label">Titular</label>
-                <input
-                  pInputText
-                  id="headline"
-                  formControlName="headline"
-                  placeholder="Ej.: Profesor de inglés para conversación"
-                  class="w-full"
-                  aria-describedby="headline-error"
-                />
-                <app-field-error id="headline-error" [control]="teacherForm.controls.headline" />
-              </div>
-
-              <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label for="specialty_id" class="tz-label">Especialidad</label>
-                  @if (specialtiesError(); as error) {
-                    <p class="text-sm text-red-600 dark:text-red-300" role="alert">
-                      {{ error }}
-                      <button type="button" class="tz-focus rounded font-semibold underline" (click)="retrySpecialties()">Reintentar</button>
-                    </p>
-                  } @else {
-                    <p-select
-                      inputId="specialty_id"
-                      formControlName="specialty_id"
-                      [options]="specialties()"
-                      optionLabel="name"
-                      optionValue="id"
-                      placeholder="Elige tu especialidad"
-                      appendTo="body"
-                      [fluid]="true"
-                    />
-                  }
-                  <app-field-error id="specialty_id-error" [control]="teacherForm.controls.specialty_id" />
-                </div>
-                <div>
-                  <label for="years" class="tz-label">Años de experiencia <span class="font-normal text-tz-body">(opcional)</span></label>
-                  <p-inputnumber inputId="years" formControlName="years_experience" [min]="0" [max]="70" [useGrouping]="false" [fluid]="true" />
-                  <app-field-error id="years-error" [control]="teacherForm.controls.years_experience" />
-                </div>
-              </div>
-
-              @if (isOtherSpecialty()) {
-                <div>
-                  <label for="custom_specialty" class="tz-label">¿Cuál es tu especialidad?</label>
-                  <input
-                    pInputText
-                    id="custom_specialty"
-                    formControlName="specialty"
-                    placeholder="Ej.: Ajedrez"
-                    class="w-full"
-                    aria-describedby="custom_specialty-error"
-                  />
-                  <app-field-error id="custom_specialty-error" [control]="teacherForm.controls.specialty" />
-                </div>
-              }
-
-              <div>
-                <label for="bio" class="tz-label">Sobre ti</label>
-                <textarea
-                  pTextarea
-                  id="bio"
-                  formControlName="bio"
-                  rows="5"
-                  class="w-full"
-                  placeholder="Cuéntales a tus estudiantes tu experiencia y cómo son tus clases."
-                  aria-describedby="bio-error bio-count"
-                ></textarea>
-                <div class="flex items-start justify-between gap-4">
-                  <app-field-error id="bio-error" [control]="teacherForm.controls.bio" />
-                  <p id="bio-count" class="tz-hint ml-auto shrink-0">{{ teacherForm.controls.bio.value.length }} / 3000</p>
-                </div>
-              </div>
-
-            </form>
-          }
-
-          <!-- ============ PASO: CREDENCIALES (OPCIONAL) ============ -->
-          @case ('credentials') {
-            <p class="mt-2">
-              Opcional. Agrega títulos o certificados avalados por una universidad o institución. Solo los verá el equipo de Tizzo.
-            </p>
-
-            @if (credentials().length) {
-              <ul class="mt-6 space-y-3" aria-label="Credenciales agregadas">
-                @for (credential of credentials(); track credential.id) {
-                  <li class="flex items-start gap-3 rounded-xl border border-tz-line p-4">
-                    <i class="pi pi-verified mt-0.5 text-tz-subtitle" aria-hidden="true"></i>
-                    <div class="min-w-0 flex-1">
-                      <p class="font-semibold text-tz-title">{{ credential.title }}</p>
-                      <p class="text-sm">{{ credential.institution }}@if (credential.issued_at) { · {{ credential.issued_at }} }</p>
-                      <p class="truncate text-xs">{{ credential.file.name }} · {{ formatSize(credential.file.size) }}</p>
-                    </div>
-                    <button
-                      pButton
-                      type="button"
-                      icon="pi pi-trash"
-                      severity="secondary"
-                      [text]="true"
-                      [rounded]="true"
-                      class="-my-2 -mr-2"
-                      (click)="removeCredential(credential.id)"
-                      [attr.aria-label]="'Quitar ' + credential.title"
-                    ></button>
-                  </li>
-                }
-              </ul>
-            }
-
-            @if (credentials().length < maxCredentials) {
-              <div #credentialBox class="mt-6 rounded-2xl border border-dashed border-tz-line p-5" [formGroup]="credentialForm">
-                <h3 class="text-base font-semibold">Agregar credencial</h3>
-                <div class="mt-4 grid gap-5 sm:grid-cols-2">
-                  <div class="sm:col-span-2">
-                    <label for="cred-title" class="tz-label">Título</label>
-                    <input pInputText id="cred-title" formControlName="title" placeholder="Ej.: Licenciado en Educación" class="w-full" aria-describedby="cred-title-error" />
-                    <app-field-error id="cred-title-error" [control]="credentialForm.controls.title" />
-                  </div>
-                  <div class="sm:col-span-2">
-                    <label for="cred-institution" class="tz-label">Institución que lo avala</label>
-                    <input
-                      pInputText
-                      id="cred-institution"
-                      formControlName="institution"
-                      placeholder="Ej.: Universidad Central de Venezuela"
-                      class="w-full"
-                      aria-describedby="cred-institution-error"
-                    />
-                    <app-field-error id="cred-institution-error" [control]="credentialForm.controls.institution" />
-                  </div>
-                  <div>
-                    <label for="cred-date" class="tz-label">Fecha de emisión <span class="font-normal text-tz-body">(opcional)</span></label>
-                    <input pInputText id="cred-date" type="date" formControlName="issued_at" [max]="today" class="w-full" />
-                  </div>
-                  <div>
-                    <label for="cred-number" class="tz-label">N.º de registro <span class="font-normal text-tz-body">(opcional)</span></label>
-                    <input pInputText id="cred-number" formControlName="credential_number" class="w-full" aria-describedby="cred-number-error" />
-                    <app-field-error id="cred-number-error" [control]="credentialForm.controls.credential_number" />
-                  </div>
-                  <div class="sm:col-span-2">
-                    <span class="tz-label">Archivo (PDF o imagen, máx. 10 MB)</span>
-                    <!-- label con estilo de botón de PrimeNG: abre el selector de archivo nativo -->
-                    <label
-                      pButton
-                      severity="secondary"
-                      [text]="true"
-                      icon="pi pi-paperclip"
-                      [label]="credentialFile() ? 'Cambiar archivo' : 'Elegir archivo'"
-                      class="-ml-3 cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-tz-subtitle"
-                    >
-                      <input
-                        type="file"
-                        class="sr-only"
-                        accept="application/pdf,image/jpeg,image/png,image/webp,image/gif"
-                        (change)="onCredentialFileSelected($event)"
-                      />
-                    </label>
-                    @if (credentialFile(); as file) {
-                      <p class="tz-hint mt-0">{{ file.name }} · {{ formatSize(file.size) }}</p>
-                    }
-                    @if (credentialFileError(); as error) {
-                      <p class="mt-1 text-sm text-red-600 dark:text-red-300" role="alert">{{ error }}</p>
-                    }
-                  </div>
-                </div>
-                <button pButton type="button" label="Agregar" icon="pi pi-plus" severity="warn" class="mt-5" (click)="addCredential(credentialBox)"></button>
-              </div>
-            } @else {
-              <p class="tz-hint mt-4">Llegaste al máximo de {{ maxCredentials }} credenciales.</p>
-            }
-          }
-
-          <!-- ============ PASO: CONFIRMAR ============ -->
-          @case ('review') {
-            <p class="mt-2">Revisa tus datos antes de crear la cuenta.</p>
-
-            <dl class="mt-6 divide-y divide-tz-line rounded-2xl border border-tz-line">
-              <div class="flex items-center gap-4 p-4">
-                <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-tz-soft">
-                  @if (avatarPreview(); as preview) {
-                    <img [src]="preview" alt="" class="size-full object-cover" />
-                  } @else {
-                    <i class="pi pi-user text-xl text-tz-subtitle" aria-hidden="true"></i>
-                  }
-                </div>
-                <div class="min-w-0">
-                  <dt class="sr-only">Nombre</dt>
-                  <dd class="font-display text-lg font-semibold text-tz-title">
-                    {{ accountForm.controls.first_name.value }} {{ accountForm.controls.last_name.value }}
-                  </dd>
-                  <dt class="sr-only">Correo</dt>
-                  <dd class="truncate text-sm">{{ accountForm.controls.email.value }}</dd>
-                </div>
-              </div>
-              @if (countryName(accountForm.controls.country_code.value); as country) {
-                <div class="grid grid-cols-3 gap-4 p-4 text-sm">
-                  <dt class="font-medium text-tz-title">País</dt>
-                  <dd class="col-span-2">{{ country }}</dd>
-                </div>
-              }
-              <div class="grid grid-cols-3 gap-4 p-4 text-sm">
-                <dt class="font-medium text-tz-title">Titular</dt>
-                <dd class="col-span-2">{{ teacherForm.controls.headline.value }}</dd>
-              </div>
-              <div class="grid grid-cols-3 gap-4 p-4 text-sm">
-                <dt class="font-medium text-tz-title">Especialidad</dt>
-                <dd class="col-span-2">
-                  {{ specialtyName() }}
-                  @if (teacherForm.controls.years_experience.value !== null) {
-                    · {{ teacherForm.controls.years_experience.value }}
-                    {{ teacherForm.controls.years_experience.value === 1 ? 'año' : 'años' }} de experiencia
-                  }
-                </dd>
-              </div>
-              <div class="grid grid-cols-3 gap-4 p-4 text-sm">
-                <dt class="font-medium text-tz-title">Credenciales</dt>
-                <dd class="col-span-2">{{ credentials().length ? credentials().length + ' agregada(s)' : 'Ninguna' }}</dd>
-              </div>
-            </dl>
-
-            <div class="mt-5 flex items-start gap-3 rounded-xl bg-tz-soft p-4 text-sm">
-              <i class="pi pi-info-circle mt-0.5 text-tz-subtitle" aria-hidden="true"></i>
-              <p>Tu perfil quedará <strong class="text-tz-title">en revisión</strong>. Te avisaremos cuando el equipo de Tizzo lo apruebe.</p>
+            <div>
+              <label for="last_name" class="tz-label">Apellido</label>
+              <input pInputText id="last_name" formControlName="last_name" autocomplete="family-name" class="w-full" aria-describedby="last_name-error" />
+              <app-field-error errorId="last_name-error" [control]="personalForm.controls.last_name" />
             </div>
-          }
-        }
-
-        <!-- Navegación entre pasos -->
-        @if (currentStep().id !== 'role') {
-          <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-tz-line pt-6">
-            <button
-              pButton
-              type="button"
-              label="Atrás"
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              [text]="true"
-              class="-ml-3"
-              [disabled]="submitting()"
-              (click)="back()"
-            ></button>
-            <!-- En los pasos con formulario el botón es su submit (atributo form): Enter en un campo avanza -->
-            @if (stepFormId(); as formId) {
-              <button
-                pButton
-                type="submit"
-                [attr.form]="formId"
-                [label]="nextLabel()"
-                [icon]="nextIcon()"
-                iconPos="right"
-                [loading]="submitting()"
-                [disabled]="submitting()"
-              ></button>
-            } @else {
-              <button
-                pButton
-                type="button"
-                [label]="nextLabel()"
-                [icon]="nextIcon()"
-                iconPos="right"
-                [loading]="submitting()"
-                [disabled]="submitting()"
-                (click)="next()"
-              ></button>
-            }
           </div>
+
+          <div>
+            <label for="reg-email" class="tz-label">Correo electrónico</label>
+            <input
+              pInputText
+              id="reg-email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="tu@correo.com"
+              class="w-full"
+              aria-describedby="reg-email-error"
+            />
+            <app-field-error errorId="reg-email-error" [control]="personalForm.controls.email" />
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div>
+              <label for="country" class="tz-label">¿De dónde eres?</label>
+              <p-select
+                inputId="country"
+                formControlName="country_code"
+                [options]="countries"
+                optionLabel="name"
+                optionValue="code"
+                placeholder="Selecciona tu país"
+                [filter]="true"
+                filterPlaceholder="Buscar país"
+                emptyFilterMessage="Sin resultados"
+                appendTo="body"
+                [fluid]="true"
+              />
+              <app-field-error errorId="country-error" [control]="personalForm.controls.country_code" />
+            </div>
+            <div>
+              <label for="age" class="tz-label">Edad</label>
+              <p-inputnumber inputId="age" formControlName="age" [min]="10" [max]="100" [useGrouping]="false" [fluid]="true" />
+              <app-field-error errorId="age-error" [control]="personalForm.controls.age" />
+            </div>
+          </div>
+        </form>
+      }
+
+      <!-- ============ PASO 2: CONTRASEÑA ============ -->
+      @case ('password') {
+        <form id="step-form" class="mt-6 space-y-5" [formGroup]="passwordForm" (ngSubmit)="next()" novalidate>
+          <div>
+            <label for="reg-password" class="tz-label">Contraseña</label>
+            <p-password inputId="reg-password" formControlName="password" [feedback]="false" [toggleMask]="true" [fluid]="true" autocomplete="new-password" />
+            <app-password-strength [password]="passwordValue()" [showRules]="false" />
+            <app-field-error errorId="reg-password-error" [control]="passwordForm.controls.password" patternMessage="Debe tener al menos una mayúscula y un número." />
+          </div>
+
+          <div>
+            <label for="confirm_password" class="tz-label">Repetir contraseña</label>
+            <p-password
+              inputId="confirm_password"
+              formControlName="confirm_password"
+              [feedback]="false"
+              [toggleMask]="true"
+              [fluid]="true"
+              autocomplete="new-password"
+            />
+            <app-field-error errorId="confirm_password-error" [control]="passwordForm.controls.confirm_password" />
+          </div>
+
+          <app-password-strength [password]="passwordValue()" [showMeter]="false" />
+        </form>
+      }
+
+      <!-- ============ PASO 3: OBJETIVO ============ -->
+      @case ('goal') {
+        <div class="mt-6 space-y-3" role="radiogroup" aria-label="¿Qué quieres hacer en Tizzo?">
+          <app-choice-card
+            name="goal"
+            value="student"
+            icon="pi pi-book"
+            title="Quiero aprender"
+            description="Reserva clases en vivo con profes reales y pregunta todo lo que quieras."
+            [selected]="role()"
+            (selectedChange)="selectRole($event)"
+          />
+          <app-choice-card
+            name="goal"
+            value="teacher"
+            icon="pi pi-video"
+            title="Quiero enseñar"
+            description="Da tus clases por videollamada, pon tu precio y recibe tus pagos."
+            [selected]="role()"
+            (selectedChange)="selectRole($event)"
+          />
+        </div>
+        @if (goalError(); as error) {
+          <p class="mt-3 text-sm text-red-600 dark:text-red-300" role="alert">{{ error }}</p>
         }
-      </div>
+      }
+
+      <!-- ============ PASO 4: INTERESES ============ -->
+      @case ('interests') {
+        <div class="mt-6">
+          @if (topicsError(); as error) {
+            <p class="text-sm text-red-600 dark:text-red-300" role="alert">
+              {{ error }}
+              <button type="button" class="tz-focus rounded font-semibold underline" (click)="retryTopics()">Reintentar</button>
+            </p>
+          } @else {
+            <app-topic-picker [topics]="topics()" [label]="step().title" [selected]="selectedTopics()" (selectedChange)="selectTopics($event)" />
+          }
+          @if (interestsError(); as error) {
+            <p class="mt-3 text-sm text-red-600 dark:text-red-300" role="alert">{{ error }}</p>
+          }
+        </div>
+      }
+    }
+
+    <!-- Navegación entre pasos -->
+    <div class="mt-8 flex gap-3">
+      @if (stepIndex() > 0) {
+        <button pButton type="button" label="Atrás" severity="secondary" [outlined]="true" [disabled]="submitting()" (click)="back()"></button>
+      }
+      <!-- En los pasos con formulario el botón es su submit (atributo form): Enter en un campo avanza -->
+      @if (step().id === 'personal' || step().id === 'password') {
+        <button pButton type="submit" form="step-form" label="Continuar" class="flex-1" [disabled]="submitting()"></button>
+      } @else {
+        <button
+          pButton
+          type="button"
+          class="flex-1"
+          [label]="step().id === 'interests' ? (submitting() ? 'Creando tu cuenta…' : 'Crear mi cuenta') : 'Continuar'"
+          [loading]="submitting()"
+          [disabled]="submitting()"
+          (click)="next()"
+        ></button>
+      }
+    </div>
+
+    @if (step().id === 'personal') {
+      <p class="mt-6 text-xs">Al continuar aceptas los Términos de uso y la Política de privacidad de Tizzo.</p>
     }
   </div>
-</section>
+</app-auth-shell>

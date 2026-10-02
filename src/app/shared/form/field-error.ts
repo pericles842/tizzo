@@ -9,7 +9,7 @@ import { AbstractControl } from '@angular/forms';
   selector: 'app-field-error',
   template: `
     @if (message(); as text) {
-      <p [id]="id()" class="mt-1.5 flex items-start gap-1.5 text-sm text-red-600 dark:text-red-300" role="alert">
+      <p [id]="errorId()" class="mt-1.5 flex items-start gap-1.5 text-sm text-red-600 dark:text-red-300" role="alert">
         <i class="pi pi-exclamation-circle mt-0.5 text-xs" aria-hidden="true"></i>{{ text }}
       </p>
     }
@@ -17,8 +17,11 @@ import { AbstractControl } from '@angular/forms';
 })
 export class FieldError {
   readonly control = input.required<AbstractControl>();
-  /** id para enlazar con aria-describedby del input */
-  readonly id = input.required<string>();
+  /**
+   * id del mensaje, para enlazarlo con aria-describedby del input.
+   * Se llama `errorId` (y no `id`) para que el id no quede duplicado en el elemento <app-field-error>.
+   */
+  readonly errorId = input.required<string>();
   /** Mensaje para el error `pattern` (depende del campo) */
   readonly patternMessage = input('El formato no es válido.');
 

@@ -8,7 +8,6 @@ export interface TeacherProfile {
   uuid: string;
   headline: string | null;
   bio: string | null;
-  specialty_id: number | null;
   specialty: string | null;
   years_experience: number | null;
   approval_status: TeacherApprovalStatus;
@@ -28,33 +27,31 @@ export interface User {
   last_name: string;
   phone: string | null;
   country_code: string | null;
+  age: number | null;
   timezone: string;
+  /** Estudiante: temas que quiere aprender. Profe: temas que quiere enseñar. */
+  topics: Topic[];
   avatar_url: string | null;
   teacher_profile: TeacherProfile | null;
 }
 
-export interface Specialty {
+export interface Topic {
   id: number;
   name: string;
   slug: string;
 }
 
+/** Registro de 4 pasos: datos personales, contraseña, objetivo (rol) y temas */
 export interface RegisterPayload {
   role: UserRole;
   first_name: string;
   last_name: string;
   email: string;
   password: string;
-  phone?: string | null;
-  country_code?: string | null;
+  country_code: string;
+  age: number;
+  topic_ids: number[];
   timezone?: string;
-  teacher?: {
-    headline: string;
-    specialty_id: number;
-    specialty?: string | null;
-    years_experience?: number | null;
-    bio: string;
-  };
 }
 
 export interface CredentialPayload {
@@ -64,6 +61,3 @@ export interface CredentialPayload {
   credential_number?: string | null;
   file: File;
 }
-
-/** Slug de la especialidad que habilita el texto libre */
-export const OTHER_SPECIALTY_SLUG = 'otro';

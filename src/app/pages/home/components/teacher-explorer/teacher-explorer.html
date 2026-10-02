@@ -5,18 +5,23 @@
     <ul class="mt-6 flex flex-wrap gap-2.5" aria-label="Temas">
       @for (topic of topics(); track topic) {
         <li>
-          <button
-            pButton
-            type="button"
-            size="small"
-            [rounded]="true"
-            [label]="topic"
-            [severity]="selectedTopic() === topic ? 'primary' : 'secondary'"
-            [outlined]="selectedTopic() !== topic"
-            [attr.aria-pressed]="selectedTopic() === topic"
-            [class.bg-tz-surface]="selectedTopic() !== topic"
-            (click)="toggleTopic(topic)"
-          ></button>
+          <!-- Un botón por estado: pButton no quita la clase p-button-outlined si [outlined] cambia en caliente -->
+          @if (selectedTopic() === topic) {
+            <button pButton type="button" size="small" [rounded]="true" [label]="topic" aria-pressed="true" (click)="toggleTopic(topic)"></button>
+          } @else {
+            <button
+              pButton
+              type="button"
+              size="small"
+              severity="secondary"
+              [rounded]="true"
+              [outlined]="true"
+              [label]="topic"
+              class="bg-tz-surface"
+              aria-pressed="false"
+              (click)="toggleTopic(topic)"
+            ></button>
+          }
         </li>
       }
     </ul>

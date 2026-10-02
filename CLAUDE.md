@@ -44,15 +44,25 @@ shared/      componentes reutilizables
   header-web/    header del sitio: logo, navegación, tema, Entrar/Crear cuenta (o avatar/Salir); p-drawer en móvil
   footer-web/    pie de página
   teacher-card/  tarjeta de profe (p-card + p-avatar + p-badge + pButton); se itera en listados
-  logo, theme-toggle, user-avatar, form/ (field-error, form-utils)
+  auth-shell/    layout de autenticación = PARTE 1 (auth-aside: panel de marca, solo cambia el texto) + PARTE 2 (contenido; slot [authTop])
+  step-progress/ barras de progreso + "Paso X de N · nombre"
+  password-strength/ medidor de seguridad (showMeter) y reglas con check (showRules)
+  choice-card/   tarjeta de opción única con p-radiobutton ([(selected)])
+  topic-picker/  chips de temas de selección múltiple ([(selected)] con ids)
+  logo (input inverse = blanco), theme-toggle, user-avatar, form/ (field-error, form-utils)
 layouts/     public-layout (header + página + footer) y app-layout (área privada)
 pages/
   home/          hero + buscador + clase en vivo, CTA de profes; home.data.ts (datos de EJEMPLO)
     components/  teacher-explorer (temas + profes destacados), how-it-works (cómo funciona)
-  login, register (asistente paso a paso), app-home (por ahora dice "layout")
+  login          AuthShell
+  register       AuthShell, 4 pasos (diseño de Figma): datos personales, contraseña, objetivo, intereses
+  app-home       por ahora dice "layout"
 ```
 
-- Rutas (`app.routes.ts`): `/`, `/ingresar` (guestGuard), `/registro` (guestGuard, acepta `?rol=estudiante|profe`), `/app` (authGuard). **Layouts y páginas con `loadComponent`** (mantiene el bundle inicial < 600 kB).
+- Rutas (`app.routes.ts`): `/` (layout público), `/ingresar` y `/registro` (pantalla completa con AuthShell, sin header; guestGuard; registro acepta `?rol=estudiante|profe` y preselecciona el objetivo), `/app` (authGuard). **Layouts y páginas con `loadComponent`** (mantiene el bundle inicial < 600 kB).
+- **Registro:** los textos de cada paso (panel de marca y formulario) están en `STEPS` de `register.ts`; el paso 4 cambia de "aprender" a "enseñar" según el objetivo (`TEACHER_INTERESTS`). Los errores del API se aplican **después** de mostrar el paso (al montarse, el formulario se revalida y borraría el error).
+- `<app-field-error errorId="...">` (no `id`: duplicaría el id en el elemento).
+- Los chips que cambian de estado se dibujan con **un `pButton` por estado** (`@if`): `pButton` no quita `p-button-outlined` si `[outlined]` cambia en caliente.
 - Secciones del home con ancla: `#explorar`, `#destacados`, `#como-funciona` (el header enlaza con `routerLink="/" fragment="..."`; `anchorScrolling` activado).
 - Las páginas centran su contenido con `tz-container`; el layout público deja el `<main>` a ancho completo para que las secciones pinten su fondo de borde a borde.
 
@@ -74,11 +84,12 @@ pages/
 
 ## Pruebas
 
-- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`.
+- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`, `TopicPicker`, reglas y medidor de contraseña.
 - `npx ng build` sin avisos.
 
 ## Estado (1 de octubre de 2026)
 
 - **Home según Figma** (claro y oscuro): header-web, hero con buscador y clase en vivo, explorador por tema, profes destacados (tarjetas iteradas), cómo funciona, CTA de profes y footer. **Solo UI:** buscador, chips de temas, "Reservar clase" y "Ver todos" no tienen lógica todavía; los datos son de ejemplo (`home.data.ts`).
-- Login, registro paso a paso y layout privado `/app` ("layout"), con botones de PrimeNG.
+- **Registro de 4 pasos e ingresar según Figma** (2 de octubre de 2026), con el layout de dos partes reutilizable, en claro, oscuro y móvil. Verificado de punta a punta (14 pasos: validaciones, medidor, aprender/enseñar, temas, correo repetido, `?rol=profe`, login).
+- Layout privado `/app` ("layout"), con botones de PrimeNG.
 - Verificado en Chrome: 23 pasos del recorrido (registro, login, sesión, tema, móvil) y capturas del home en claro, oscuro y móvil.

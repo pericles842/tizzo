@@ -1,0 +1,101 @@
+<header class="sticky top-0 z-40 border-b border-tz-line bg-tz-header backdrop-blur-md">
+  <div class="tz-container flex h-16 items-center gap-4">
+    <app-logo />
+
+    <!-- Navegación (escritorio) -->
+    <nav aria-label="Principal" class="hidden flex-1 items-center justify-center gap-1 lg:flex">
+      @for (link of links; track link.label) {
+        <a
+          pButton
+          severity="secondary"
+          size="small"
+          [text]="true"
+          [label]="link.label"
+          [routerLink]="link.route"
+          [fragment]="link.fragment"
+          [queryParams]="link.queryParams"
+        ></a>
+      }
+    </nav>
+
+    <div class="ml-auto flex items-center gap-2">
+      <app-theme-toggle />
+
+      @switch (auth.status()) {
+        @case ('anonymous') {
+          <a pButton routerLink="/ingresar" label="Entrar" severity="secondary" size="small" [outlined]="true" class="hidden sm:inline-flex"></a>
+          <a pButton routerLink="/registro" label="Crear cuenta" size="small"></a>
+        }
+        @case ('authenticated') {
+          @if (auth.user(); as user) {
+            <a
+              routerLink="/app"
+              class="tz-focus flex items-center gap-2 rounded-full p-0.5 pr-2 hover:bg-tz-soft"
+              [attr.aria-label]="'Ir a mi espacio, ' + user.first_name"
+            >
+              <app-user-avatar [user]="user" />
+              <span class="hidden text-sm font-medium text-tz-title sm:inline">{{ user.first_name }}</span>
+            </a>
+            <button
+              pButton
+              type="button"
+              icon="pi pi-sign-out"
+              severity="secondary"
+              size="small"
+              [text]="true"
+              [disabled]="loggingOut()"
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
+              (click)="logout()"
+            ></button>
+          }
+        }
+        @default {
+          <!-- Mientras se sabe si hay sesión (o en el render del servidor): reserva el espacio para que nada salte -->
+          <span class="inline-block h-9 w-28" aria-hidden="true"></span>
+        }
+      }
+
+      <!-- Menú (móvil y tablet) -->
+      <button
+        pButton
+        type="button"
+        icon="pi pi-bars"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        class="lg:hidden"
+        aria-label="Abrir menú"
+        aria-controls="menu-movil"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="menuOpen.set(true)"
+      ></button>
+    </div>
+  </div>
+</header>
+
+<p-drawer [visible]="menuOpen()" (visibleChange)="menuOpen.set($event)" position="right" header="Menú" styleClass="w-72" ariaCloseLabel="Cerrar menú">
+  <nav id="menu-movil" aria-label="Principal" class="flex flex-col gap-1">
+    @for (link of links; track link.label) {
+      <a
+        pButton
+        severity="secondary"
+        [text]="true"
+        [fluid]="true"
+        [label]="link.label"
+        [routerLink]="link.route"
+        [fragment]="link.fragment"
+        [queryParams]="link.queryParams"
+        class="justify-start"
+        (click)="closeMenu()"
+      ></a>
+    }
+  </nav>
+
+  @if (auth.status() === 'anonymous') {
+    <div class="mt-6 flex flex-col gap-2 border-t border-tz-line pt-6">
+      <a pButton routerLink="/ingresar" label="Entrar" severity="secondary" [outlined]="true" [fluid]="true" (click)="closeMenu()"></a>
+      <a pButton routerLink="/registro" label="Crear cuenta" [fluid]="true" (click)="closeMenu()"></a>
+    </div>
+  }
+</p-drawer>

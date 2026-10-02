@@ -1,0 +1,25 @@
+<a
+  href="#contenido"
+  class="sr-only rounded-lg bg-tz-surface px-4 py-2 font-semibold text-tz-title focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50"
+  >Saltar al contenido</a
+>
+<app-header-web />
+
+@if (auth.isPendingTeacher()) {
+  <div class="border-b border-tz-line bg-tz-soft" role="status">
+    <div class="tz-container flex items-start gap-3 py-3 text-sm">
+      <i class="pi pi-clock mt-0.5 text-tz-subtitle" aria-hidden="true"></i>
+      <p>
+        <strong class="font-semibold text-tz-title">Tu perfil de profesor está en revisión.</strong>
+        Te avisaremos cuando el equipo de Tizzo lo apruebe para que puedas publicar cursos.
+      </p>
+    </div>
+  </div>
+}
+
+<div class="tz-container flex flex-1 gap-6 py-8">
+  <!-- Futuro: menú lateral del área privada -->
+  <main id="contenido" class="min-w-0 flex-1">
+    <router-outlet />
+  </main>
+</div>

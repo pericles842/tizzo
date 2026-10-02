@@ -1,31 +1,180 @@
+/* Orden de capas: PrimeNG queda por debajo de components/utilities, así las clases de Tailwind lo pueden ajustar */
+@layer theme, base, primeng, components, utilities;
+
 @import 'tailwindcss';
 @plugin 'tailwindcss-primeui';
 
 /* Modo oscuro: PrimeNG y Tailwind comparten la clase .app-dark en <html> */
 @custom-variant dark (&:where(.app-dark, .app-dark *));
 
-/* Tokens de marca (docs/BRANDING.md). Usar estas clases, no hex sueltos. */
-@theme {
+/*
+ * SEMÁNTICA DE COLOR (docs/BRANDING.md). Cada variable tiene su valor claro (:root) y oscuro (.app-dark),
+ * así una sola clase (text-tz-title, bg-tz-section, ...) sirve para los dos temas.
+ * Regla: en componentes NO se escriben hex ni se duplica con `dark:`; se usa el token por su significado.
+ * Los controles (botones, inputs, selects, badges, cards) son de PrimeNG y toman la marca del preset.
+ */
+:root {
+  /* Tema claro "Lila nube" */
+  --tz-bg-from: #f3eeff; /* degradado del hero y de las páginas sueltas */
+  --tz-bg-to: #e2d6ff;
+  --tz-title: #2a1f5c; /* títulos y texto fuerte */
+  --tz-subtitle: #7b61ff; /* subtítulos, enlaces, datos destacados */
+  --tz-body: #5b5480; /* texto normal */
+  --tz-accent: #ffd23f; /* acento amarillo */
+  --tz-live: #ff5a5f; /* "en vivo" */
+  --tz-gradient: linear-gradient(135deg, #7b61ff 0%, #9b80ff 100%); /* paneles y avatares de marca */
+  --tz-section: #f8f5ff; /* fondo de sección */
+  --tz-section-alt: #fcfbff; /* fondo de sección alterna */
+  --tz-footer: #efe9ff; /* pie de página */
+  --tz-card: rgb(255 255 255 / 0.55); /* tarjeta translúcida sobre el degradado */
+  --tz-header: rgb(243 238 255 / 0.8); /* header con blur */
+  --tz-line: rgb(123 97 255 / 0.18); /* bordes y divisores */
+  --tz-soft: rgb(123 97 255 / 0.08); /* rellenos suaves (chips, paneles) */
+}
+
+.app-dark {
+  /* Tema oscuro "Violeta noche" */
+  --tz-bg-from: #1c1433;
+  --tz-bg-to: #2d1f5e;
+  --tz-title: #ffffff;
+  --tz-subtitle: #c3b2ff;
+  --tz-body: #b9aedb;
+  --tz-gradient: linear-gradient(135deg, #b39cff 0%, #7c5cff 100%);
+  --tz-section: #1c1433;
+  --tz-section-alt: #191130;
+  --tz-footer: #140e26;
+  --tz-card: rgb(255 255 255 / 0.05);
+  --tz-header: rgb(28 20 51 / 0.8);
+  --tz-line: rgb(195 178 255 / 0.16);
+  --tz-soft: rgb(195 178 255 / 0.08);
+}
+
+@theme inline {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
 
-  /* Tema claro "Lila nube" */
-  --color-cloud-from: #f3eeff;
-  --color-cloud-to: #e2d6ff;
-  --color-cloud-title: #2a1f5c;
-  --color-cloud-primary: #7b61ff;
-  --color-cloud-text: #5b5480;
+  --color-tz-title: var(--tz-title);
+  --color-tz-subtitle: var(--tz-subtitle);
+  --color-tz-body: var(--tz-body);
+  --color-tz-accent: var(--tz-accent);
+  --color-tz-live: var(--tz-live);
+  --color-tz-section: var(--tz-section);
+  --color-tz-section-alt: var(--tz-section-alt);
+  --color-tz-footer: var(--tz-footer);
+  --color-tz-card: var(--tz-card);
+  --color-tz-header: var(--tz-header);
+  --color-tz-line: var(--tz-line);
+  --color-tz-soft: var(--tz-soft);
+  /* Puente con PrimeNG: superficie y borde de las cards/inputs (cambian con el tema del preset) */
+  --color-tz-surface: var(--p-content-background);
+  --color-tz-surface-border: var(--p-content-border-color);
+}
 
-  /* Tema oscuro "Violeta noche" */
-  --color-night-from: #1c1433;
-  --color-night-to: #2d1f5e;
-  --color-night-title: #ffffff;
-  --color-night-subtitle: #c3b2ff;
-  --color-night-text: #b9aedb;
-  --color-night-primary-from: #b39cff;
-  --color-night-primary-to: #7c5cff;
+@layer base {
+  /* El degradado va en <html> (cubre todo el documento, por largo que sea) y no usa `fixed`,
+     que en páginas largas deja cortes visibles al hacer scroll */
+  html {
+    min-height: 100%;
+    background-color: var(--tz-bg-to);
+    background-image: linear-gradient(160deg, var(--tz-bg-from), var(--tz-bg-to));
+    scroll-behavior: smooth;
+  }
 
-  /* Comunes */
-  --color-accent: #ffd23f;
-  --color-live: #ff5a5f;
+  body {
+    min-height: 100dvh;
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--tz-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    color: var(--tz-title);
+  }
+}
+
+@layer components {
+  /* Contenedor estándar de página */
+  .tz-container {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .tz-container {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  /* Degradado de marca (paneles, avatares, banda de llamado a la acción) */
+  .tz-bg-gradient {
+    background-image: var(--tz-gradient);
+  }
+
+  /*
+   * Botón primario de PrimeNG en tema oscuro: degradado de marca (#B39CFF -> #7C5CFF), como las muestras.
+   * Va aquí porque light-dark() de CSS no acepta degradados en los tokens del preset.
+   * El primario es el .p-button sin severidad ni variante.
+   */
+  .app-dark
+    .p-button:not(.p-button-secondary, .p-button-warn, .p-button-success, .p-button-info, .p-button-help, .p-button-danger, .p-button-contrast, .p-button-outlined, .p-button-text, .p-button-link) {
+    background-image: var(--tz-gradient);
+    border-color: transparent;
+  }
+
+  .app-dark
+    .p-button:not(.p-button-secondary, .p-button-warn, .p-button-success, .p-button-info, .p-button-help, .p-button-danger, .p-button-contrast, .p-button-outlined, .p-button-text, .p-button-link):not(:disabled):hover {
+    filter: brightness(1.08);
+  }
+
+  /* Tarjeta translúcida sobre el degradado de fondo (login, registro) */
+  .tz-card {
+    background: var(--tz-card);
+    border: 1px solid var(--tz-line);
+    border-radius: 1.25rem;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Punto rojo de "en vivo" (se usa como icono de p-tag) */
+  .tz-live-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--tz-live);
+  }
+
+  .tz-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--tz-title);
+  }
+
+  .tz-hint {
+    margin-top: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--tz-body);
+  }
+
+  .tz-focus:focus-visible {
+    outline: 2px solid var(--tz-subtitle);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

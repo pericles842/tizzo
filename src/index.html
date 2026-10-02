@@ -5,6 +5,24 @@
   <title>Tizzo</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Tizzo: clases en vivo con profes reales, por videollamada.">
+  <meta name="color-scheme" content="light dark">
+  <!--
+    Aplica el tema antes de pintar para evitar el parpadeo (claro <-> oscuro).
+    Mantener alineado con src/app/core/theme/theme.service.ts (clave 'tizzo-theme', clase 'app-dark').
+  -->
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('tizzo-theme');
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        if (theme === 'dark') document.documentElement.classList.add('app-dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <!-- Tipografía provisional (Poppins títulos, Inter textos); no es oficial todavía -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -1,0 +1,76 @@
+﻿<!-- ============ HERO ============ -->
+<section class="py-14 sm:py-20" aria-labelledby="hero-titulo">
+  <div class="tz-container grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+    <div>
+      <p-tag value="Clases en vivo ahora" icon="tz-live-dot" [rounded]="true" class="border border-tz-line bg-tz-surface px-3 py-1 text-xs font-medium text-tz-title" />
+
+      <h1 id="hero-titulo" class="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+        Aprende con un profe real, en vivo
+      </h1>
+      <p class="mt-5 max-w-xl text-base leading-relaxed sm:text-lg">
+        Reserva clases por videollamada con profes de Venezuela y Latinoamérica. Pregunta, practica y recibe tu diploma al terminar.
+      </p>
+
+      <!-- Buscador (solo UI por ahora) -->
+      <form
+        role="search"
+        class="mt-7 flex max-w-xl items-center gap-2 rounded-2xl border border-tz-surface-border bg-tz-surface p-1.5 pl-4 shadow-sm focus-within:border-tz-subtitle"
+        (submit)="$event.preventDefault()"
+      >
+        <label for="hero-search" class="sr-only">¿Qué quieres aprender hoy?</label>
+        <input
+          pInputText
+          id="hero-search"
+          type="search"
+          placeholder="¿Qué quieres aprender hoy?"
+          class="min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus:outline-none"
+        />
+        <button pButton type="submit" label="Buscar clase"></button>
+      </form>
+
+      <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium" aria-label="Ventajas">
+        @for (item of highlights; track item) {
+          <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-tz-subtitle" aria-hidden="true"></span>{{ item }}</li>
+        }
+      </ul>
+    </div>
+
+    <!-- Clase en vivo destacada -->
+    <p-card class="border border-tz-surface-border shadow-xl shadow-tz-soft" aria-label="Clase en vivo destacada">
+      <div class="tz-bg-gradient flex min-h-56 flex-col justify-between rounded-2xl p-5 text-white sm:min-h-64">
+        <p-badge value="EN VIVO" severity="danger" class="self-start" />
+        <div>
+          <p class="font-display text-2xl font-semibold">{{ liveClass.title }}</p>
+          <p class="mt-1 text-sm text-white/85">{{ liveClass.progress }}</p>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center gap-3 px-1">
+        <p-avatar [label]="liveClass.teacherInitials" shape="circle" size="large" class="bg-tz-soft text-sm text-tz-subtitle" />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-tz-title">{{ liveClass.teacher }}</p>
+          <p class="text-sm">{{ liveClass.subject }} · <span aria-hidden="true">★</span> {{ liveClass.rating }}</p>
+        </div>
+        <p class="font-display text-xl font-semibold text-tz-title">${{ liveClass.price }}</p>
+      </div>
+    </p-card>
+  </div>
+</section>
+
+<!-- ============ EXPLORAR + PROFES DESTACADOS ============ -->
+<app-teacher-explorer [topics]="topics" [teachers]="teachers" />
+
+<!-- ============ CÓMO FUNCIONA ============ -->
+<app-how-it-works [steps]="steps" />
+
+<!-- ============ LLAMADO A PROFES ============ -->
+<section class="bg-tz-section-alt pb-16" aria-labelledby="profes-cta-titulo">
+  <div class="tz-container">
+    <div class="tz-bg-gradient flex flex-col gap-6 rounded-3xl p-8 text-white sm:p-10 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h2 id="profes-cta-titulo" class="text-2xl font-semibold text-white sm:text-3xl">Enseña lo que sabes. Tú pones el precio.</h2>
+        <p class="mt-2 max-w-xl text-white/85">Nosotros nos encargamos del cobro, la sala de videollamada y los diplomas de tus alumnos.</p>
+      </div>
+      <a pButton routerLink="/registro" [queryParams]="{ rol: 'profe' }" label="Quiero dar clases" severity="warn" class="shrink-0"></a>
+    </div>
+  </div>
+</section>

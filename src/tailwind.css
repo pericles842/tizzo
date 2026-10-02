@@ -1,4 +1,4 @@
-/* Orden de capas: PrimeNG queda por debajo de components/utilities, así las clases de Tailwind lo pueden ajustar */
+﻿/* Orden de capas: PrimeNG queda por debajo de components/utilities, así las clases de Tailwind lo pueden ajustar */
 @layer theme, base, primeng, components, utilities;
 
 @import 'tailwindcss';
@@ -26,6 +26,9 @@
   --tz-section: #f8f5ff; /* fondo de sección */
   --tz-section-alt: #fcfbff; /* fondo de sección alterna */
   --tz-footer: #efe9ff; /* pie de página */
+  --tz-canvas: #f1ecff; /* fondo del área de trabajo del dashboard */
+  --tz-on-paper: #5b5480; /* texto sobre el papel (siempre oscuro, porque el papel es blanco en los dos temas) */
+  --tz-paper: #ffffff; /* papel: fondo fijo para ver firmas y documentos (en los diplomas el fondo es blanco en los dos temas) */
   --tz-card: rgb(255 255 255 / 0.55); /* tarjeta translúcida sobre el degradado */
   --tz-header: rgb(243 238 255 / 0.8); /* header con blur */
   --tz-line: rgb(123 97 255 / 0.18); /* bordes y divisores */
@@ -43,6 +46,9 @@
   --tz-section: #1c1433;
   --tz-section-alt: #191130;
   --tz-footer: #140e26;
+  --tz-canvas: #170f2c;
+  --tz-paper: #ffffff;
+  --tz-on-paper: #5b5480;
   --tz-card: rgb(255 255 255 / 0.05);
   --tz-header: rgb(28 20 51 / 0.8);
   --tz-line: rgb(195 178 255 / 0.16);
@@ -61,6 +67,9 @@
   --color-tz-section: var(--tz-section);
   --color-tz-section-alt: var(--tz-section-alt);
   --color-tz-footer: var(--tz-footer);
+  --color-tz-canvas: var(--tz-canvas);
+  --color-tz-paper: var(--tz-paper);
+  --color-tz-on-paper: var(--tz-on-paper);
   --color-tz-card: var(--tz-card);
   --color-tz-header: var(--tz-header);
   --color-tz-line: var(--tz-line);

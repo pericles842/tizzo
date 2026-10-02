@@ -64,6 +64,13 @@ export class AuthService {
     return user;
   }
 
+  /** Quita la foto de perfil (el header vuelve a mostrar las iniciales) */
+  async removeAvatar(): Promise<User> {
+    const { user } = await firstValueFrom(this.http.delete<{ user: User }>(`${this.api}/me/avatar`));
+    this.setUser(user);
+    return user;
+  }
+
   async addCredential(credential: CredentialPayload): Promise<void> {
     const form = new FormData();
     form.append('title', credential.title);

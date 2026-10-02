@@ -1,0 +1,33 @@
+@let d = data();
+
+<header>
+  <p class="font-display text-3xl font-semibold text-tz-title">{{ d.copy.greeting }}</p>
+  <p class="mt-1 text-sm">{{ d.copy.summary }}</p>
+</header>
+
+<!-- Fila 1: próxima clase en vivo + indicadores -->
+<div class="mt-6 grid gap-5 xl:grid-cols-3">
+  <div class="xl:col-span-2">
+    <app-live-class-card [liveClass]="d.liveClass" />
+  </div>
+  <ul class="grid gap-5 sm:grid-cols-3 xl:grid-cols-1" aria-label="Resumen">
+    @for (stat of d.stats; track stat.label) {
+      <li><app-stat-card [stat]="stat" /></li>
+    }
+  </ul>
+</div>
+
+<!-- Fila 2: semana + tareas -->
+<div class="mt-5 grid gap-5 xl:grid-cols-3">
+  <div class="min-w-0 xl:col-span-2">
+    <app-week-calendar [week]="d.week" />
+  </div>
+  <app-task-list [heading]="d.copy.tasksTitle" [tasks]="d.tasks" />
+</div>
+
+<!-- Fila 3: personas, certificados y comunidad -->
+<div class="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+  <app-people-list [heading]="d.copy.peopleTitle" [route]="d.copy.peopleRoute" [people]="d.people" />
+  <app-certificates-summary [heading]="d.copy.certificatesTitle" [certificates]="d.certificates" />
+  <app-community-feed [posts]="d.posts" />
+</div>

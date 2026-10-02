@@ -11,6 +11,15 @@ export const authGuard: CanActivateFn = async (route, state) => {
   return auth.isAuthenticated() || router.createUrlTree(['/ingresar'], { queryParams: { redirect: state.url } });
 };
 
+/** Solo profes. Un estudiante que entre por URL vuelve al inicio del dashboard. Usar después de authGuard. */
+export const teacherGuard: CanActivateFn = async () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  await auth.ensureSession();
+  return auth.user()?.role === 'teacher' || router.createUrlTree(['/app']);
+};
+
 /** Solo sin sesión (ingresar, registro). Con sesión manda al área privada. */
 export const guestGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);

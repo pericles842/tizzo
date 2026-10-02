@@ -28,18 +28,12 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./pages/register/register').then((m) => m.Register)
   },
-  // Área privada (después de entrar). Por ahora solo la estructura del layout; el dashboard viene después.
+  // Dashboard (área privada, después de entrar): features/dashboard
   {
     path: 'app',
-    loadComponent: () => import('./layouts/app-layout/app-layout').then((m) => m.AppLayout),
+    loadComponent: () => import('./features/dashboard/layout/dashboard-layout').then((m) => m.DashboardLayout),
     canActivate: [authGuard],
-    children: [
-      {
-        path: '',
-        title: 'Tizzo',
-        loadComponent: () => import('./pages/app-home/app-home').then((m) => m.AppHome)
-      }
-    ]
+    loadChildren: () => import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES)
   },
   { path: '**', redirectTo: '' }
 ];

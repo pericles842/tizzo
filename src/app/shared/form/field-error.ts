@@ -38,6 +38,7 @@ export class FieldError {
     if (errors['min'] || errors['max']) return 'El valor está fuera del rango permitido.';
     if (errors['pattern']) return this.patternMessage();
     if (errors['mismatch']) return 'Las contraseñas no coinciden.';
+    if (errors['futureDate']) return 'La fecha no puede ser futura.';
     if (errors['file']) return errors['file'];
     return 'Revisa este campo.';
   }

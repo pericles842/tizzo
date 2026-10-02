@@ -1,4 +1,4 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+﻿import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -28,8 +28,7 @@ const user: User = {
     uuid: 'tp-1',
     headline: 'Profe',
     bio: null,
-    specialty: null,
-    years_experience: 3,
+    signature_url: null,
     approval_status: 'pending',
     rejection_reason: null,
     rating_avg: 0,

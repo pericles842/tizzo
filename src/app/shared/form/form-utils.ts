@@ -46,6 +46,14 @@ export function passwordsMatch(password: string, confirm: string): ValidatorFn {
   };
 }
 
+/** Fecha 'YYYY-MM-DD' que no sea futura (fecha de emisión de un título). Un campo vacío lo valida `required`. */
+export const notFutureDate: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const value = control.value as string | null;
+  if (!value) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  return value > today ? { futureDate: true } : null;
+};
+
 /** Valida tipo y tamaño de un archivo. Devuelve el mensaje de error o null. */
 export function checkFile(file: File, allowedTypes: string[], typesLabel: string): string | null {
   if (!allowedTypes.includes(file.type)) return `Formato no permitido. Usa ${typesLabel}.`;

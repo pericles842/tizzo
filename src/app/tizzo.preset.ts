@@ -117,6 +117,14 @@ export const TizzoPreset = definePreset(Aura, {
       root: { borderRadius: '999px', padding: '0 0.5rem', fontWeight: '700' },
       danger: { background: '#ff5a5f', color: '#ffffff' }
     },
+    // Etiquetas: primary = estado logrado ("Obtenido"), secondary = neutro suave ("En curso", "En 3 días"),
+    // warn = acento amarillo para lo urgente ("Vence mañana")
+    tag: {
+      root: { fontWeight: '600' },
+      primary: { background: 'light-dark({primary.500}, #7c5cff)', color: '#ffffff' },
+      secondary: { background: 'light-dark({primary.100}, rgba(195,178,255,0.14))', color: 'light-dark({primary.600}, {primary.200})' },
+      warn: { background: 'light-dark(#fff1bf, rgba(255,210,63,0.16))', color: 'light-dark(#6b5000, #ffd23f)' }
+    },
     card: {
       root: { borderRadius: '1.25rem', shadow: 'none' },
       body: { padding: '1rem', gap: '0.75rem' }

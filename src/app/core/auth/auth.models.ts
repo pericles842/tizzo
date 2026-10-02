@@ -1,4 +1,4 @@
-/** Tipos que devuelve y recibe el API de autenticación (tizzo.api/src/utils/serializers.ts) */
+﻿/** Tipos que devuelve y recibe el API de autenticación (tizzo.api/src/utils/serializers.ts) */
 
 export type UserRole = 'student' | 'teacher';
 export type TeacherApprovalStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -8,8 +8,8 @@ export interface TeacherProfile {
   uuid: string;
   headline: string | null;
   bio: string | null;
-  specialty: string | null;
-  years_experience: number | null;
+  /** Firma para los diplomas */
+  signature_url: string | null;
   approval_status: TeacherApprovalStatus;
   rejection_reason: string | null;
   rating_avg: number;

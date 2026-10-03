@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { teacherGuard } from '../../core/auth/auth.guards';
+import { teacherGuard, teacherMatch } from '../../core/auth/auth.guards';
 
 /** Secciones del menú que aún no existen: una sola página configurable desde `data` */
 const comingSoon = (path: string, pageTitle: string, icon: string, description: string) => ({
@@ -23,6 +23,14 @@ export const DASHBOARD_ROUTES: Routes = [
     data: { pageTitle: 'Perfil' },
     canActivate: [teacherGuard],
     loadComponent: () => import('./pages/profile/teacher-profile-page').then((m) => m.TeacherProfilePage)
+  },
+  {
+    // Profes: calendario con FullCalendar. Estudiantes: sigue la pantalla "Próximamente" de abajo.
+    path: 'calendario',
+    title: 'Calendario · Tizzo',
+    data: { pageTitle: 'Calendario' },
+    canMatch: [teacherMatch],
+    loadComponent: () => import('./pages/calendar/calendar-page').then((m) => m.CalendarPage)
   },
   comingSoon('calendario', 'Calendario', 'pi pi-calendar', 'Aquí verás todas tus clases en vivo organizadas por día y semana.'),
   comingSoon('certificados', 'Certificados', 'pi pi-verified', 'Aquí podrás ver y descargar tus diplomas.'),

@@ -1,0 +1,100 @@
+/*
+ * FullCalendar con los tokens de marca (docs/BRANDING.md): ningún hex, todo sale de las variables con significado
+ * que ya cambian entre claro y oscuro. La barra superior es de PrimeNG, así que aquí solo se estiliza la cuadrícula.
+ */
+.tz-calendar {
+  --fc-border-color: var(--tz-line);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: var(--tz-soft);
+  --fc-today-bg-color: var(--tz-soft);
+  --fc-now-indicator-color: var(--tz-live);
+  --fc-list-event-hover-bg-color: var(--tz-soft);
+  --fc-event-bg-color: var(--tz-soft);
+  --fc-event-border-color: transparent;
+  --fc-event-text-color: var(--tz-title);
+  font-family: var(--font-sans);
+  color: var(--tz-body);
+}
+
+.tz-calendar .fc-col-header-cell-cushion,
+.tz-calendar .fc-daygrid-day-number,
+.tz-calendar .fc-list-day-text,
+.tz-calendar .fc-list-day-side-text {
+  color: var(--tz-title);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.tz-calendar .fc-timegrid-slot-label-cushion,
+.tz-calendar .fc-list-event-time,
+.tz-calendar .fc-daygrid-more-link {
+  color: var(--tz-body);
+}
+
+.tz-calendar .fc-list-event-title a {
+  color: var(--tz-title);
+  text-decoration: none;
+}
+
+.tz-calendar .fc-list-empty {
+  background: transparent;
+}
+
+.tz-calendar .fc-theme-standard .fc-scrollgrid,
+.tz-calendar .fc-theme-standard td,
+.tz-calendar .fc-theme-standard th {
+  border-color: var(--tz-line);
+}
+
+/* Las clases: franja de color a la izquierda y fondo suave del mismo color (violeta = curso, amarillo = clase suelta) */
+.tz-calendar .fc-event {
+  cursor: pointer;
+  border-radius: 0.5rem;
+  border-width: 0 0 0 4px;
+  padding: 1px 2px;
+  font-size: 0.8125rem;
+}
+
+.tz-calendar .fc-event:focus-visible {
+  outline: 2px solid var(--tz-subtitle);
+  outline-offset: 2px;
+}
+
+.tz-calendar .tz-event-course {
+  --fc-event-bg-color: color-mix(in srgb, var(--tz-subtitle) 20%, transparent);
+  border-color: var(--tz-subtitle);
+}
+
+.tz-calendar .tz-event-class {
+  --fc-event-bg-color: color-mix(in srgb, var(--tz-accent) 28%, transparent);
+  border-color: var(--tz-accent);
+}
+
+/* Borrador: la clase espera a que aprueben al profe */
+.tz-calendar .tz-event-draft {
+  opacity: 0.75;
+  border-style: dashed;
+}
+
+/* Las clases que ya no se pueden mover no muestran el cursor de arrastre */
+.tz-calendar .fc-event:not(.fc-event-draggable) {
+  cursor: pointer;
+}
+
+.tz-legend {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 0.25rem;
+  border-left: 4px solid;
+}
+
+.tz-legend-course {
+  background: color-mix(in srgb, var(--tz-subtitle) 20%, transparent);
+  border-color: var(--tz-subtitle);
+}
+
+.tz-legend-class {
+  background: color-mix(in srgb, var(--tz-accent) 28%, transparent);
+  border-color: var(--tz-accent);
+}

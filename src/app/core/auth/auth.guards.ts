@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
 /** Solo con sesión. Sin sesión manda a /ingresar y recuerda a dónde iba. */
@@ -18,6 +18,17 @@ export const teacherGuard: CanActivateFn = async () => {
 
   await auth.ensureSession();
   return auth.user()?.role === 'teacher' || router.createUrlTree(['/app']);
+};
+
+/**
+ * Para elegir entre dos pantallas con la misma ruta según el rol: la primera ruta que lo use solo coincide con
+ * profes y las demás (por ejemplo "Próximamente" de estudiantes) siguen de largo. Usar después de authGuard.
+ */
+export const teacherMatch: CanMatchFn = async () => {
+  const auth = inject(AuthService);
+
+  await auth.ensureSession();
+  return auth.user()?.role === 'teacher';
 };
 
 /** Solo sin sesión (ingresar, registro). Con sesión manda al área privada. */

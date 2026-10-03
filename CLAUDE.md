@@ -73,6 +73,14 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
                              quitar con p-confirmdialog);
                              teacher-profile.service.ts (API), profile.utils.ts (% de perfil completo), profile.models.ts
       coming-soon/           secciones aún no hechas (se configura desde data de la ruta)
+      calendar/              "Calendario" del profe (solo rol teacher; para estudiantes la misma ruta sigue en "Próximamente" gracias a `teacherMatch`):
+                             calendar-page.ts (FullCalendar 6 con barra propia de PrimeNG: Mes/Semana/Lista; tocar un día abre el diálogo, arrastrar mueve, tocar una clase la muestra y la cancela;
+                             abre en Mes por defecto, también en móvil) + calendar-page.css (la cuadrícula con tokens, violeta = clase de curso, amarillo = clase suelta, borde punteado = borrador),
+                             components/ schedule-dialog (pregunta "¿clase o curso?" y aloja el formulario), class-form, course-form (clases con su fecha, hora y duración; la siguiente
+                             se propone una semana después), offer-fields (título, descripción, precio USD, máximo de integrantes y "qué aprenderás", comunes a los dos), range-fields (empieza / termina con selector de solo lectura; la duración sale del rango y mover el inicio mueve el fin), points-input (input + chips, hasta 15),
+                             session-dialog (miniatura, datos, personas inscritas, "Vista previa" y cancelar con p-confirmdialog), course-preview-dialog (la pantalla de detalle en un diálogo grande) y templates-card (usar o borrar plantillas);
+                             teaching.service.ts (API), calendar.models.ts, calendar.utils.ts (fecha sugerida, semanas, formato)
+    (shared/) course-detail/  pantalla de detalle de una clase o curso, solo con datos (`CourseDetail`): course-detail-view arma course-hero, learning-points-card, course-program-card, course-teacher-card y booking-card (`[preview]` desactiva reservar); course-detail.utils (dinero, próxima clase, días); course-cover (miniatura 16:9 o fondo de marca), enrolled-list (inscritos "N de M") y cover-picker (elegir la miniatura). Pensados para reusarlos en la página pública.
     widgets/                 un componente por bloque; todos usan widget-card (p-card + título + "Ver todos")
       live-class-card, stat-card, week-calendar, task-list, people-list, certificates-summary, community-feed
     data/
@@ -112,7 +120,7 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
 
 ## Pruebas
 
-- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`, `TopicPicker`, reglas y medidor de contraseña, semana y menú por rol del dashboard, `FilePicker` y el porcentaje de perfil completo.
+- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`, `TopicPicker`, reglas y medidor de contraseña, semana y menú por rol del dashboard, `FilePicker` el porcentaje de perfil completo y las utilidades de fecha del calendario.
 - `npx ng build` sin avisos.
 
 ## Estado (1 de octubre de 2026)
@@ -121,6 +129,8 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
 - **Registro de 4 pasos e ingresar según Figma** (2 de octubre de 2026), con el layout de dos partes reutilizable, en claro, oscuro y móvil. Verificado de punta a punta (14 pasos: validaciones, medidor, aprender/enseñar, temas, correo repetido, `?rol=profe`, login).
 - **Perfil del profe** (`/app/perfil`, 2 de octubre de 2026): foto, titular, biografía, **especialidades (categorías en selección múltiple, cada una con su renglón de años obligatorios)**, firma y credenciales (todos los campos obligatorios). Verificado de punta a punta en el navegador (16 pasos: acceso por rol, selector agrupado, años obligatorios, persistencia, foto en tarjeta y header, firma, credencial con 5 errores y fecha futura, quitar con confirmación, oscuro y móvil) y 36 pruebas unitarias.
 - **Formulario con lista de renglones** (`profile-form`): un `FormArray` de grupos `{ category_id, years }` sincronizado con el `p-multiselect` (`syncRows`); al recibir lo guardado se reconstruye con `{ emitEvent: false }` para no borrar el aviso "Cambios guardados". El campo de años va en un contenedor de ancho fijo con `[fluid]="true"` (el `class` del host de `p-inputnumber` no limita su input interno).
+- **Calendario del profe** (`/app/calendario`, 2 de octubre de 2026): programar **clase suelta o curso** desde el calendario, **plantillas** (guardar y usar título, descripción y demás), arrastrar para cambiar la hora, cancelar con confirmación. Verificado en el navegador (80 pasos, incluidos miniatura, inscritos y vista previa de clase y de curso: acceso por rol, pregunta clase/curso, rango inicio-fin y duración calculada, cupo, 15 puntos, validaciones, plantillas, curso de 3 clases, profe pendiente y aprobado, detalle y cancelación, vistas, uso de plantilla, claro/oscuro y móvil 375 px) y 25 pruebas unitarias nuevas (rango de fechas y utilidades del detalle). Textos de PrimeNG en español en `core/i18n/primeng-es.ts` (selector de fechas).
+- **FullCalendar:** v6.1 (`@fullcalendar/angular`, `core`, `daygrid`, `timegrid`, `list`, `interaction`); no subir a la v7 sin revisar (cambia el API y pide `temporal-polyfill`). La barra de navegación y la vista son controles de PrimeNG sobre `getApi()`, con `headerToolbar: false`. Los eventos llegan con la función `events` (no con `[events]`) y se refrescan con `refetchEvents()`. Los callbacks de FullCalendar corren fuera de Angular: actualizar siempre **signals** (la app es zoneless).
 - **Pruebas de interfaz:** configuración Angular `e2e` (`ng serve --configuration e2e --port 4201`) que apunta al API de pruebas en `:3100`; ver la regla en `../CLAUDE.md`.
 - **Dashboard `/app` según Figma** (2 de octubre de 2026): menú lateral por rol, header propio, "Inicio" con 7 widgets y datos de prueba por rol; el resto de secciones muestran "Próximamente". Verificado en el navegador (estudiante y profe, claro/oscuro, móvil).
 - Verificado en Chrome: 23 pasos del recorrido (registro, login, sesión, tema, móvil) y capturas del home en claro, oscuro y móvil.

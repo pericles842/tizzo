@@ -13,6 +13,7 @@ import { providePrimeNG } from 'primeng/config';
 
 import { routes } from './app.routes';
 import { TizzoPreset } from './tizzo.preset';
+import { PRIMENG_ES } from './core/i18n/primeng-es';
 import { credentialsInterceptor } from './core/http/credentials.interceptor';
 import { AuthService } from './core/auth/auth.service';
 
@@ -29,6 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     providePrimeNG({
       ripple: false,
+      translation: PRIMENG_ES,
       theme: {
         preset: TizzoPreset,
         options: {

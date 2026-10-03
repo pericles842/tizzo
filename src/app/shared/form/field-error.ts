@@ -37,6 +37,8 @@ export class FieldError {
     if (errors['maxlength']) return `No puede pasar de ${errors['maxlength'].requiredLength} caracteres.`;
     if (errors['min'] || errors['max']) return 'El valor está fuera del rango permitido.';
     if (errors['pattern']) return this.patternMessage();
+    // Validadores propios que traen su mensaje (ej. el rango inicio-fin de una clase)
+    if (typeof errors['range'] === 'string') return errors['range'];
     if (errors['mismatch']) return 'Las contraseñas no coinciden.';
     if (errors['futureDate']) return 'La fecha no puede ser futura.';
     if (errors['file']) return errors['file'];

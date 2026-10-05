@@ -38,7 +38,7 @@ export function formatRange(startIso: string, endIso: string): string {
   const start = new Date(startIso);
   const end = new Date(endIso);
   const day = start.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
-  const time = (date: Date) => date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const time = (date: Date) => date.toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit', hour12: true });
   return `${day}, ${time(start)} – ${time(end)}`;
 }
 

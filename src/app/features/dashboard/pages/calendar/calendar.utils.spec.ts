@@ -68,9 +68,17 @@ describe('calendar.utils', () => {
   describe('formatRange', () => {
     it('muestra día y horas de inicio y fin', () => {
       const text = formatRange(new Date(2026, 9, 5, 9, 0).toISOString(), new Date(2026, 9, 5, 10, 0).toISOString());
-      expect(text).toContain('09:00');
+      expect(text).toContain('9:00');
       expect(text).toContain('10:00');
       expect(text.toLowerCase()).toContain('octubre');
+    });
+
+    it('usa la hora de 12 horas (a. m. / p. m.), no la militar', () => {
+      const afternoon = formatRange(new Date(2026, 9, 5, 16, 13).toISOString(), new Date(2026, 9, 5, 17, 13).toISOString());
+      expect(afternoon).toContain('4:13');
+      expect(afternoon).toContain('5:13');
+      expect(afternoon).not.toContain('16:13');
+      expect(afternoon.toLowerCase()).toMatch(/p\.\s?m\./);
     });
   });
 });

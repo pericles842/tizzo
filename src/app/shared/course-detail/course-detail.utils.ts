@@ -6,9 +6,9 @@ export function money(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: hasCents ? 2 : 0, maximumFractionDigits: 2 }).format(amount);
 }
 
-/** "09:00" (24 horas, hora local) */
+/** "9:00 a. m." (12 horas, hora local) */
 export function timeLabel(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return new Date(iso).toLocaleTimeString('es', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 /** "mar 13 oct" */
@@ -27,7 +27,7 @@ export function nextSession(sessions: CourseDetailSession[], now: Date = new Dat
   return sessions.filter((s) => s.status === 'scheduled' && new Date(s.starts_at) > now).sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0] ?? null;
 }
 
-/** "hoy 18:00", "mañana 09:00" o "mar 13 oct 09:00" */
+/** "hoy 6:00 p. m.", "mañana 9:00 a. m." o "mar 13 oct 9:00 a. m." */
 export function nextClassLabel(session: CourseDetailSession, now: Date = new Date()): string {
   const start = dayKey(session.starts_at);
   const tomorrow = new Date(now);

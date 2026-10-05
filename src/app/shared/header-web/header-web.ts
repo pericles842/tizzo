@@ -33,7 +33,7 @@ export class HeaderWeb {
   /** Las secciones viven en el home; desde otras páginas el enlace lleva al home y baja a la sección */
   protected readonly links: NavLink[] = [
     { label: 'Buscar profes', route: '/', fragment: 'explorar' },
-    { label: 'Clases destacadas', route: '/', fragment: 'destacados' },
+    { label: 'Clases', route: '/clases' },
     { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
     { label: 'Soy profe', route: '/registro', queryParams: { rol: 'profe' } }
   ];

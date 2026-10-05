@@ -98,3 +98,66 @@
   background: color-mix(in srgb, var(--tz-accent) 28%, transparent);
   border-color: var(--tz-accent);
 }
+
+/* Contenido de cada clase: "EN VIVO" (si está en curso), hora y título (live-events.ts) */
+.tz-calendar .tz-event-content {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.375rem;
+  overflow: hidden;
+}
+
+.tz-calendar .tz-event-content .fc-event-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Clase en curso: verde, con "EN VIVO" y un brillo que late */
+.tz-calendar .tz-event-live {
+  --fc-event-bg-color: color-mix(in srgb, var(--tz-on-air) 18%, transparent);
+  border-color: var(--tz-on-air);
+  border-style: solid;
+  opacity: 1;
+  animation: tz-event-live-glow 1.8s ease-in-out infinite;
+}
+
+.tz-calendar .fc-list-event.tz-event-live td {
+  background: color-mix(in srgb, var(--tz-on-air) 12%, transparent);
+}
+
+.tz-calendar .fc-list-event.tz-event-live .fc-list-event-dot {
+  border-color: var(--tz-on-air);
+}
+
+@keyframes tz-event-live-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tz-on-air) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--tz-on-air) 0%, transparent);
+  }
+}
+
+/* Clase que ya terminó */
+.tz-calendar .tz-event-ended {
+  opacity: 0.55;
+}
+
+.tz-legend-live {
+  background: color-mix(in srgb, var(--tz-on-air) 18%, transparent);
+  border-color: var(--tz-on-air);
+}
+
+/* En el mes del móvil la celda no da para "EN VIVO": queda solo el punto verde que late */
+@media (max-width: 640px) {
+  .tz-calendar .fc-daygrid-event .tz-on-air-tag {
+    gap: 0;
+    padding: 0.25rem;
+    font-size: 0;
+  }
+}

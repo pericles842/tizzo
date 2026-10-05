@@ -34,8 +34,8 @@ describe('course-detail.utils', () => {
   });
 
   it('nextClassLabel: hoy, mañana y otro día', () => {
-    expect(nextClassLabel(session(1, new Date(2026, 9, 5, 18, 0)), now)).toBe('hoy 18:00');
-    expect(nextClassLabel(session(1, new Date(2026, 9, 6, 9, 0)), now)).toBe('mañana 09:00');
+    expect(nextClassLabel(session(1, new Date(2026, 9, 5, 18, 0)), now)).toBe('hoy 6:00 p. m.');
+    expect(nextClassLabel(session(1, new Date(2026, 9, 6, 9, 0)), now)).toBe('mañana 9:00 a. m.');
     expect(nextClassLabel(session(1, new Date(2026, 9, 13, 9, 0)), now)).toContain('13');
   });
 

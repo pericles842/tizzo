@@ -11,15 +11,16 @@
         Reserva clases por videollamada con profes de Venezuela y Latinoamérica. Pregunta, practica y recibe tu diploma al terminar.
       </p>
 
-      <!-- Buscador (solo UI por ahora) -->
+      <!-- Buscador: lleva al catálogo de clases con lo escrito -->
       <form
         role="search"
         class="mt-7 flex max-w-xl items-center gap-2 rounded-2xl border border-tz-surface-border bg-tz-surface p-1.5 pl-4 shadow-sm focus-within:border-tz-subtitle"
-        (submit)="$event.preventDefault()"
+        (submit)="$event.preventDefault(); search(heroSearch.value)"
       >
         <label for="hero-search" class="sr-only">¿Qué quieres aprender hoy?</label>
         <input
           pInputText
+          #heroSearch
           id="hero-search"
           type="search"
           placeholder="¿Qué quieres aprender hoy?"
@@ -55,6 +56,9 @@
     </p-card>
   </div>
 </section>
+
+<!-- ============ CLASES DISPONIBLES (reales, del API) ============ -->
+<app-available-classes />
 
 <!-- ============ EXPLORAR + PROFES DESTACADOS ============ -->
 <app-teacher-explorer [topics]="topics" [teachers]="teachers" />

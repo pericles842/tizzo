@@ -6,6 +6,7 @@ import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
 import { Tag } from 'primeng/tag';
 import { apiErrorMessage } from '../../../../../../core/http/api-error';
+import { ClassJoinBar } from '../../../../../../shared/class-join/class-join-bar';
 import { CourseCover } from '../../../../../../shared/course-cover/course-cover';
 import { CourseDetail, EnrolledStudent } from '../../../../../../shared/course-detail/course-detail.models';
 import { EnrolledList } from '../../../../../../shared/enrolled-list/enrolled-list';
@@ -20,7 +21,7 @@ import { CoursePreviewDialog } from '../course-preview-dialog/course-preview-dia
  */
 @Component({
   selector: 'app-session-dialog',
-  imports: [Dialog, ButtonDirective, Tag, Message, ConfirmDialog, CourseCover, EnrolledList, CoursePreviewDialog],
+  imports: [Dialog, ButtonDirective, Tag, Message, ConfirmDialog, ClassJoinBar, CourseCover, EnrolledList, CoursePreviewDialog],
   providers: [ConfirmationService],
   template: `
     <p-dialog header="Detalle de la clase" [(visible)]="visible" [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '34rem', maxWidth: '95vw' }" [contentStyle]="{ maxHeight: '75vh' }" (onHide)="onHide()">
@@ -52,6 +53,10 @@ import { CoursePreviewDialog } from '../course-preview-dialog/course-preview-dia
               <p class="tz-hint">Se publicará cuando el equipo de Tizzo apruebe tu perfil.</p>
             }
           </div>
+
+          @if (current.course_status === 'published' && current.status !== 'cancelled') {
+            <app-class-join-bar [startsAt]="current.starts_at" [endsAt]="current.ends_at" [courseUuid]="current.course_uuid" />
+          }
 
           @if (loadError(); as message) {
             <p-message severity="error" role="alert">{{ message }}</p-message>

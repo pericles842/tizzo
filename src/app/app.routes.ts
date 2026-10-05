@@ -12,8 +12,26 @@ export const routes: Routes = [
         path: '',
         title: 'Tizzo · Clases en vivo con profes reales',
         loadComponent: () => import('./pages/home/home').then((m) => m.Home)
+      },
+      // Catálogo público de clases y cursos, y la página de cada uno (para reservar)
+      {
+        path: 'clases',
+        title: 'Clases y cursos · Tizzo',
+        loadComponent: () => import('./features/catalog/catalog-page').then((m) => m.CatalogPage)
+      },
+      {
+        path: 'clases/:slug',
+        title: 'Clase · Tizzo',
+        loadComponent: () => import('./features/catalog/course-page').then((m) => m.CoursePage)
       }
     ]
+  },
+  // Sala de la videollamada: pantalla completa, solo con sesión (el API decide si la persona puede entrar)
+  {
+    path: 'sala/:courseUuid',
+    title: 'Sala · Tizzo',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/room/room-page').then((m) => m.RoomPage)
   },
   // Autenticación: pantalla completa con AuthShell (panel de marca + formulario), sin header ni footer
   {

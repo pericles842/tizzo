@@ -1,4 +1,4 @@
-import { Component, OnInit, PLATFORM_ID, ViewEncapsulation, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, PLATFORM_ID, ViewEncapsulation, inject, signal, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
@@ -19,6 +19,7 @@ import { ScheduleDialog } from './components/schedule-dialog/schedule-dialog';
 import { SessionDialog } from './components/session-dialog/session-dialog';
 import { TemplatesCard } from './components/templates-card/templates-card';
 import { TeachingService } from './teaching.service';
+import { LIVE_REFRESH_MS, liveEventContent, phaseClassNames, refreshLivePhases } from './live-events';
 
 type CalendarView = 'dayGridMonth' | 'timeGridWeek' | 'listWeek';
 
@@ -80,6 +81,7 @@ const VIEWS: { label: string; value: CalendarView }[] = [
         <ul class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="Leyenda">
           <li class="flex items-center gap-2"><span class="tz-legend tz-legend-course" aria-hidden="true"></span> Clase de un curso</li>
           <li class="flex items-center gap-2"><span class="tz-legend tz-legend-class" aria-hidden="true"></span> Clase suelta</li>
+          <li class="flex items-center gap-2"><span class="tz-legend tz-legend-live" aria-hidden="true"></span> En vivo ahora</li>
         </ul>
       </p-card>
 
@@ -101,6 +103,7 @@ export class CalendarPage implements OnInit {
   private readonly service = inject(TeachingService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly calendar = viewChild(FullCalendarComponent);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly views = VIEWS;
   protected readonly view = signal<CalendarView>('dayGridMonth');
@@ -120,7 +123,11 @@ export class CalendarPage implements OnInit {
 
   ngOnInit(): void {
     // Esta página solo se renderiza en el navegador (la sesión vive en una cookie que el servidor no ve)
-    if (this.isBrowser) void this.loadTemplates();
+    if (!this.isBrowser) return;
+    void this.loadTemplates();
+    // Las clases se ponen en verde (EN VIVO) al empezar y se apagan al terminar, sin volver a pedirlas
+    const timer = setInterval(() => refreshLivePhases(this.calendar()?.getApi(), (s) => this.baseClasses(s as CalendarSession)), LIVE_REFRESH_MS);
+    this.destroyRef.onDestroy(() => clearInterval(timer));
   }
 
   private buildOptions(): CalendarOptions {
@@ -137,11 +144,12 @@ export class CalendarPage implements OnInit {
       slotMinTime: '06:00:00',
       slotMaxTime: '24:00:00',
       scrollTime: '08:00:00',
-      slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-      eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+      slotLabelFormat: { hour: 'numeric', minute: '2-digit', hour12: true },
+      eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: true },
       dayMaxEvents: 3,
       // En el mes las clases se ven como bloques (con su franja de color), no como puntos
       eventDisplay: 'block',
+      eventContent: liveEventContent,
       views: { dayGridMonth: { displayEventTime: false } },
       editable: true,
       eventDurationEditable: false,
@@ -183,9 +191,14 @@ export class CalendarPage implements OnInit {
       start: session.starts_at,
       end: session.ends_at,
       editable,
-      classNames: [session.kind === 'course' ? 'tz-event-course' : 'tz-event-class', ...(session.course_status === 'draft' ? ['tz-event-draft'] : [])],
+      classNames: [...this.baseClasses(session), ...phaseClassNames(session)],
       extendedProps: { session }
     };
+  }
+
+  /** Clases fijas de cada evento: tipo (curso o clase suelta) y borrador */
+  private baseClasses(session: CalendarSession): string[] {
+    return [session.kind === 'course' ? 'tz-event-course' : 'tz-event-class', ...(session.course_status === 'draft' ? ['tz-event-draft'] : [])];
   }
 
   // ---------- Barra del calendario ----------

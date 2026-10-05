@@ -26,7 +26,8 @@ Frontend de Tizzo. Contexto general en `../CLAUDE.md` y `../docs/`. Colores y se
 | Acento amarillo ("Quiero dar clases", "Agregar") | `severity="warn"` (en Tizzo `warn` = acento amarillo, **no** advertencia) |
 | Acción neutra con borde ("Entrar", chips de temas) | `severity="secondary" [outlined]="true"` |
 | Enlaces de navegación, "Atrás", iconos | `severity="secondary" [text]="true"` |
-| Indicador "En vivo" | `<p-badge value="EN VIVO" severity="danger" />` |
+| Indicador "En vivo" (home, profes) | `<p-badge value="EN VIVO" severity="danger" />` |
+| Clase **en curso** (calendarios, diálogo, sala) | `<span class="tz-on-air-tag"><span class="tz-on-air-dot"></span>EN VIVO</span>` (verde, punto que late). El estado sale **solo de las fechas** con `sessionPhase` de `core/live/session-phase.ts`. |
 
 - En `p-avatar`/`p-card` usar `class` (no `styleClass`, está obsoleto en PrimeNG 20).
 - En `p-select` dentro de una `tz-card` usar `appendTo="body"` (el `backdrop-filter` rompe el posicionamiento del menú).
@@ -40,9 +41,14 @@ core/        servicios y lógica sin UI
   http/      credentialsInterceptor (withCredentials al API), api-error (mensajes y fields del API)
   theme/     ThemeService (claro/oscuro)
   catalog/   listas fijas (países)
+  live/      session-phase: en vivo / sala abierta / terminó, SOLO por las fechas (10 min antes = sala abierta), y roomPath
+  notifications/ NotificationService: campana (GET /notifications) + WebSocket (socket.io-client, cargado bajo demanda);
+             se desconecta solo al cerrar sesión
 shared/      componentes reutilizables
+  class-join/    class-join-bar: estado de la clase (EN VIVO, sala abierta, terminó) + "Entrar a la sala" (activo de 10 min antes al fin)
   header-web/    header del sitio: logo, navegación, tema, Entrar/Crear cuenta (o avatar/Salir); p-drawer en móvil
   footer-web/    pie de página
+  catalog-card/  tarjeta de una clase o curso publicado (la usan /clases y el home); solo recibe un CatalogItem
   teacher-card/  tarjeta de profe (p-card + p-avatar + p-badge + pButton); se itera en listados
   auth-shell/    layout de autenticación = PARTE 1 (auth-aside: panel de marca, solo cambia el texto) + PARTE 2 (contenido; slot [authTop])
   step-progress/ barras de progreso + "Paso X de N · nombre"
@@ -53,15 +59,21 @@ shared/      componentes reutilizables
 layouts/     public-layout (header + página + footer)
 pages/       páginas del sitio público
   home/          hero + buscador + clase en vivo, CTA de profes; home.data.ts (datos de EJEMPLO)
-    components/  teacher-explorer (temas + profes destacados), how-it-works (cómo funciona)
+    components/  available-classes ("Clases disponibles": hasta 6 clases reales del catálogo, cargadas en el navegador), teacher-explorer (temas + profes destacados), how-it-works (cómo funciona)
   login          AuthShell
   register       AuthShell, 4 pasos (diseño de Figma): datos personales, contraseña, objetivo, intereses
 features/    áreas grandes con su propio layout, rutas, páginas, widgets y datos
+  catalog/                   público: /clases (catalog-page, filtros clase/curso y búsqueda) y /clases/:slug (course-page: la pantalla
+                             de detalle con "Reservar"; sin sesión manda a /ingresar?redirect=... ; TEMPORAL: reservar confirma sin pago)
+  room/                      /sala/:courseUuid (pantalla completa, authGuard): room-page con Daily en modo call object y la UI de Tizzo
+                             (sala cerrada con la próxima clase, lobby, llamada, salió, terminó), video-tile (video o iniciales, audio,
+                             "Silenciar" para el profe), room.service (estado y token; el token nunca se guarda)
   dashboard/                 área privada /app (diseño de Figma)
     dashboard.routes.ts      rutas hijas: '' (Inicio), calendario, certificados, profesores | estudiantes, comunidad, tareas, academias
     layout/
       dashboard-layout       menú lateral fijo (escritorio) / p-drawer (móvil) + header + aviso de profe en revisión
-      dashboard-header/      título de la sección (data.pageTitle), tema, notificaciones (p-overlaybadge), menú de usuario (p-menu)
+      dashboard-header/      título de la sección (data.pageTitle), tema, notificaciones, menú de usuario (p-menu)
+      notification-bell/     campana: contador (p-overlaybadge), lista en p-popover, marcar leído, abre el enlace del aviso
       dashboard-sidebar/     opciones del menú, contador (p-badge) y "Cerrar sesión"
       dashboard-nav.ts       opciones del menú y a qué rol se muestran (navForRole)
     pages/
@@ -73,7 +85,10 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
                              quitar con p-confirmdialog);
                              teacher-profile.service.ts (API), profile.utils.ts (% de perfil completo), profile.models.ts
       coming-soon/           secciones aún no hechas (se configura desde data de la ruta)
-      calendar/              "Calendario" del profe (solo rol teacher; para estudiantes la misma ruta sigue en "Próximamente" gracias a `teacherMatch`):
+      student-calendar/      "Calendario" del estudiante (misma ruta; `teacherMatch` manda al profe al suyo): solo lectura, sus clases
+                             (GET /student/calendar) y class-info-dialog (datos, profe, EN VIVO y "Entrar a la sala"). Usa calendar-page.css.
+      calendar/              "Calendario" del profe (solo rol teacher). live-events.ts (compartido): contenido de cada evento con
+                             "EN VIVO", clase verde `tz-event-live` y refresco cada 30 s sin pedir al API (refreshLivePhases).
                              calendar-page.ts (FullCalendar 6 con barra propia de PrimeNG: Mes/Semana/Lista; tocar un día abre el diálogo, arrastrar mueve, tocar una clase la muestra y la cancela;
                              abre en Mes por defecto, también en móvil) + calendar-page.css (la cuadrícula con tokens, violeta = clase de curso, amarillo = clase suelta, borde punteado = borrador),
                              components/ schedule-dialog (pregunta "¿clase o curso?" y aloja el formulario), class-form, course-form (clases con su fecha, hora y duración; la siguiente
@@ -88,7 +103,7 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
       dashboard.mock.ts      datos de PRUEBA por rol (estudiante / profe); la semana se arma alrededor de hoy
 ```
 
-- Rutas (`app.routes.ts`): `/` (layout público), `/ingresar` y `/registro` (pantalla completa con AuthShell, sin header; guestGuard; registro acepta `?rol=estudiante|profe` y preselecciona el objetivo), `/app` (authGuard → `features/dashboard`). **Layouts y páginas con `loadComponent`/`loadChildren`** (mantiene el bundle inicial < 600 kB).
+- Rutas (`app.routes.ts`): `/` (layout público, con `/clases` y `/clases/:slug`), `/sala/:courseUuid` (pantalla completa, authGuard; `RenderMode.Client` igual que `/clases`), `/ingresar` y `/registro` (pantalla completa con AuthShell, sin header; guestGuard; registro acepta `?rol=estudiante|profe` y preselecciona el objetivo), `/app` (authGuard → `features/dashboard`). **Layouts y páginas con `loadComponent`/`loadChildren`** (mantiene el bundle inicial < 600 kB).
 - **Rutas por rol:** `authGuard` protege todo `/app`; para pantallas de un solo rol agregar además `canActivate: [teacherGuard]` (un estudiante que entre por URL vuelve a `/app`) y `roles` en `dashboard-nav.ts` para ocultar la opción.
 - **Confirmaciones destructivas:** `p-confirmdialog` + `ConfirmationService` declarado en `providers` del componente que lo usa (ver `credentials-card`). Botón de aceptar con `acceptButtonStyleClass="p-button-danger"`.
 - **Archivos privados** (credenciales): no se muestran con `<img>`; se abren por la ruta del API con la cookie de sesión (`<a target="_blank" [href]="service.credentialFileUrl(uuid)">`).
@@ -120,12 +135,17 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
 
 ## Pruebas
 
-- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`, `TopicPicker`, reglas y medidor de contraseña, semana y menú por rol del dashboard, `FilePicker` el porcentaje de perfil completo y las utilidades de fecha del calendario.
+- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`, `TopicPicker`, reglas y medidor de contraseña, semana y menú por rol del dashboard, `FilePicker`, el porcentaje de perfil completo, las utilidades de fecha del calendario y `sessionPhase` (65 en total).
 - `npx ng build` sin avisos.
 
-## Estado (1 de octubre de 2026)
+## Estado (5 de octubre de 2026)
 
-- **Home según Figma** (claro y oscuro): header-web, hero con buscador y clase en vivo, explorador por tema, profes destacados (tarjetas iteradas), cómo funciona, CTA de profes y footer. **Solo UI:** buscador, chips de temas, "Reservar clase" y "Ver todos" no tienen lógica todavía; los datos son de ejemplo (`home.data.ts`).
+- **Integración de clase** (5 de octubre de 2026, ver `../docs/INTEGRACION_CLASE.md`): catálogo `/clases` y página `/clases/:slug` con reserva, calendario del estudiante (solo lectura) con diálogo y "Entrar a la sala", clases en curso en verde con EN VIVO en los dos calendarios, campana con WebSocket y la sala `/sala/:courseUuid` con la interfaz de Tizzo sobre Daily (call object). Verificado: 34 pasos en el navegador (catálogo, reserva con redirección a ingresar, calendario y diálogo, verde y punto que late, aviso en vivo, leer avisos, sala cerrada/lobby/sin acceso, profe, oscuro, móvil 375 px) y una **llamada real** en Daily con profe y estudiante (18 pasos: video en ambos lados, cámara y micrófono, el profe silencia, salir).
+- `@daily-co/daily-js` y `socket.io-client` se cargan con `import()` dinámico (no pesan en el bundle inicial). `allowedCommonJsDependencies` en `angular.json` (`debug`, `xmlhttprequest-ssl`, de socket.io-client) para compilar sin avisos.
+- **Horas siempre en 12 horas** (a. m. / p. m.): `hourFormat="12"` en `p-datepicker`, y `{ hour: 'numeric', minute: '2-digit', hour12: true }` en `toLocaleTimeString` y en FullCalendar (`slotLabelFormat`, `eventTimeFormat`). Nunca `hour12: false` ni `hourFormat="24"`.
+- PrimeIcons **no tiene** `pi-microphone-slash`: para "micrófono apagado" se usa `pi-volume-off`.
+
+- **Home según Figma** (claro y oscuro): header-web, hero con buscador y clase en vivo, **clases disponibles (reales, del API)**, explorador por tema, profes destacados (tarjetas iteradas), cómo funciona, CTA de profes y footer. El buscador del hero lleva a `/clases?q=`. **Siguen con datos de ejemplo** (`home.data.ts`): clase en vivo del hero, chips de temas y profes destacados (sus "Reservar clase" y "Ver todos" no tienen lógica todavía).
 - **Registro de 4 pasos e ingresar según Figma** (2 de octubre de 2026), con el layout de dos partes reutilizable, en claro, oscuro y móvil. Verificado de punta a punta (14 pasos: validaciones, medidor, aprender/enseñar, temas, correo repetido, `?rol=profe`, login).
 - **Perfil del profe** (`/app/perfil`, 2 de octubre de 2026): foto, titular, biografía, **especialidades (categorías en selección múltiple, cada una con su renglón de años obligatorios)**, firma y credenciales (todos los campos obligatorios). Verificado de punta a punta en el navegador (16 pasos: acceso por rol, selector agrupado, años obligatorios, persistencia, foto en tarjeta y header, firma, credencial con 5 errores y fecha futura, quitar con confirmación, oscuro y móvil) y 36 pruebas unitarias.
 - **Formulario con lista de renglones** (`profile-form`): un `FormArray` de grupos `{ category_id, years }` sincronizado con el `p-multiselect` (`syncRows`); al recibir lo guardado se reconstruye con `{ emitEvent: false }` para no borrar el aviso "Cambios guardados". El campo de años va en un contenedor de ancho fijo con `[fluid]="true"` (el `class` del host de `p-inputnumber` no limita su input interno).

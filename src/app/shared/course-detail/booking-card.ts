@@ -1,4 +1,5 @@
 import { Component, computed, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { CourseDetail } from './course-detail.models';
@@ -8,13 +9,13 @@ import { DayGroup, capacityLabel, groupByDay, money, timeLabel, typicalDuration 
 const VISIBLE_DAYS = 10;
 
 /**
- * Tarjeta de reserva: precio, horario (día y hora de las clases), cupos, botón "Reservar y pagar" y lo que incluye.
- * Con `preview` el botón queda desactivado (el profe ve cómo se verá, pero no reserva). El pago y la reserva
- * todavía no existen: `reserve` queda listo para conectarlos.
+ * Tarjeta de reserva: precio, horario (día y hora de las clases), cupos, botón "Reservar" y lo que incluye.
+ * Con `preview` el botón queda desactivado (el profe ve cómo se verá, pero no reserva). Con `enrolled` muestra que ya
+ * está inscrito y el camino a su calendario. TEMPORAL: sin pasarela, reservar confirma al instante (docs/DECISIONES.md).
  */
 @Component({
   selector: 'app-booking-card',
-  imports: [ButtonDirective, Card],
+  imports: [ButtonDirective, Card, RouterLink],
   template: `
     <p-card class="border border-tz-surface-border">
       <p class="font-display text-3xl font-semibold text-tz-title">
@@ -59,11 +60,29 @@ const VISIBLE_DAYS = 10;
         <span class="size-2 shrink-0 rounded-full bg-tz-accent" aria-hidden="true"></span>{{ spotsLabel() }}
       </p>
 
-      <button pButton type="button" class="mt-4 w-full" label="Reservar y pagar" [disabled]="preview() || soldOut()" (click)="reserve.emit()"></button>
-      @if (preview()) {
-        <p class="tz-hint text-center">Vista previa: la reserva no está disponible.</p>
+      @if (enrolled()) {
+        <p class="mt-4 flex items-center gap-2 text-sm font-semibold text-tz-title" role="status">
+          <i class="pi pi-check-circle text-tz-subtitle" aria-hidden="true"></i> Ya estás inscrito
+        </p>
+        <a pButton routerLink="/app/calendario" class="mt-3 w-full" label="Ver en mi calendario" icon="pi pi-calendar"></a>
+        <p class="mt-3 text-xs">Entra a la sala desde tu calendario. La sala abre 10 minutos antes de cada clase.</p>
+      } @else {
+        <button
+          pButton
+          type="button"
+          class="mt-4 w-full"
+          label="Reservar"
+          [loading]="reserving()"
+          [disabled]="preview() || soldOut() || !!blockedReason()"
+          (click)="reserve.emit()"
+        ></button>
+        @if (preview()) {
+          <p class="tz-hint text-center">Vista previa: la reserva no está disponible.</p>
+        } @else if (blockedReason(); as reason) {
+          <p class="tz-hint text-center">{{ reason }}</p>
+        }
+        <p class="mt-3 text-xs">Al reservar, la clase aparece en tu calendario y te enviamos el enlace de la sala por correo.</p>
       }
-      <p class="mt-3 text-xs">Tu pago confirma la reserva. Recibirás el link de la sala por correo.</p>
 
       <h2 class="mt-5 text-sm font-semibold text-tz-title">Incluye</h2>
       <ul class="mt-2 space-y-1.5 text-sm">
@@ -79,6 +98,12 @@ export class BookingCard {
   readonly course = input.required<CourseDetail>();
   /** Vista previa del profe: no se puede reservar */
   readonly preview = input(false);
+  /** Ya tiene la reserva confirmada */
+  readonly enrolled = input(false);
+  /** La reserva se está enviando */
+  readonly reserving = input(false);
+  /** Por qué esta persona no puede reservar (ej. es una cuenta de profe); null = puede */
+  readonly blockedReason = input<string | null>(null);
   readonly reserve = output<void>();
 
   protected readonly visibleDays = VISIBLE_DAYS;

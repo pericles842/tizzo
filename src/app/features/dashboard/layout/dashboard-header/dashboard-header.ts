@@ -1,11 +1,11 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { ButtonDirective } from 'primeng/button';
-import { OverlayBadge } from 'primeng/overlaybadge';
 import { Menu } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ThemeToggle } from '../../../../shared/theme-toggle/theme-toggle';
 import { UserAvatar } from '../../../../shared/user-avatar/user-avatar';
+import { NotificationBell } from '../notification-bell/notification-bell';
 
 /**
  * Header del dashboard: título de la sección, tema, notificaciones y menú del usuario.
@@ -13,7 +13,7 @@ import { UserAvatar } from '../../../../shared/user-avatar/user-avatar';
  */
 @Component({
   selector: 'app-dashboard-header',
-  imports: [ButtonDirective, OverlayBadge, Menu, ThemeToggle, UserAvatar],
+  imports: [ButtonDirective, Menu, ThemeToggle, UserAvatar, NotificationBell],
   template: `
     <header class="sticky top-0 z-30 border-b border-tz-line bg-tz-header backdrop-blur-md">
       <div class="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -33,18 +33,7 @@ import { UserAvatar } from '../../../../shared/user-avatar/user-avatar';
 
         <app-theme-toggle />
 
-        <p-overlaybadge severity="danger" badgeSize="small" class="[&_.p-badge]:min-w-2 [&_.p-badge]:h-2 [&_.p-badge]:p-0">
-          <button
-            pButton
-            type="button"
-            icon="pi pi-bell"
-            severity="secondary"
-            [outlined]="true"
-            [rounded]="true"
-            class="bg-tz-surface"
-            aria-label="Notificaciones (hay nuevas)"
-          ></button>
-        </p-overlaybadge>
+        <app-notification-bell />
 
         @if (auth.user(); as user) {
           <button

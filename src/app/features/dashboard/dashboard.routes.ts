@@ -25,14 +25,19 @@ export const DASHBOARD_ROUTES: Routes = [
     loadComponent: () => import('./pages/profile/teacher-profile-page').then((m) => m.TeacherProfilePage)
   },
   {
-    // Profes: calendario con FullCalendar. Estudiantes: sigue la pantalla "Próximamente" de abajo.
+    // Profes: calendario para programar. Estudiantes: el de abajo, solo lectura con sus clases.
     path: 'calendario',
     title: 'Calendario · Tizzo',
     data: { pageTitle: 'Calendario' },
     canMatch: [teacherMatch],
     loadComponent: () => import('./pages/calendar/calendar-page').then((m) => m.CalendarPage)
   },
-  comingSoon('calendario', 'Calendario', 'pi pi-calendar', 'Aquí verás todas tus clases en vivo organizadas por día y semana.'),
+  {
+    path: 'calendario',
+    title: 'Calendario · Tizzo',
+    data: { pageTitle: 'Calendario' },
+    loadComponent: () => import('./pages/student-calendar/student-calendar-page').then((m) => m.StudentCalendarPage)
+  },
   comingSoon('certificados', 'Certificados', 'pi pi-verified', 'Aquí podrás ver y descargar tus diplomas.'),
   comingSoon('profesores', 'Profesores', 'pi pi-user', 'Aquí verás a tus profes y podrás encontrar nuevos.'),
   comingSoon('estudiantes', 'Estudiantes', 'pi pi-user', 'Aquí verás a tus estudiantes y su progreso.'),

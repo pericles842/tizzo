@@ -2,7 +2,7 @@ import { Component, ElementRef, PLATFORM_ID, computed, effect, inject, signal, v
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ButtonDirective } from 'primeng/button';
 import { Chip } from 'primeng/chip';
@@ -16,6 +16,8 @@ import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { CatalogCard } from '../../shared/catalog-card/catalog-card';
+import { TeacherCard, TeacherCardData } from '../../shared/teacher-card/teacher-card';
+import { TeachersService } from '../teachers/teachers.service';
 import { CatalogArea, CatalogItem, CatalogService } from './catalog.service';
 import {
   CatalogQuery,
@@ -33,6 +35,9 @@ import {
 } from './catalog-query';
 import { CatalogFilters } from './components/catalog-filters';
 
+/** Cuántos profes se muestran sobre los resultados cuando se busca por texto */
+const TEACHERS_SHOWN = 3;
+
 /** Filtro activo que se muestra como chip removible sobre los resultados */
 interface ActiveChip {
   id: string;
@@ -46,7 +51,7 @@ interface ActiveChip {
  */
 @Component({
   selector: 'app-catalog-page',
-  imports: [FormsModule, ButtonDirective, Chip, Drawer, IconField, InputIcon, InputText, Message, Paginator, Select, Skeleton, CatalogCard, CatalogFilters],
+  imports: [FormsModule, RouterLink, ButtonDirective, Chip, Drawer, IconField, InputIcon, InputText, Message, Paginator, Select, Skeleton, CatalogCard, TeacherCard, CatalogFilters],
   template: `
     <!-- Buscador -->
     <section class="border-b border-tz-line bg-tz-section py-10" aria-labelledby="catalogo-titulo">
@@ -131,6 +136,24 @@ interface ActiveChip {
             <p-message severity="error" styleClass="mt-6" role="alert">{{ message }}</p-message>
           }
 
+          <!-- Profes que coinciden con lo escrito (nombre, especialidad, clase...) -->
+          @if (teachers().length) {
+            <section class="mt-6" aria-labelledby="catalogo-profes">
+              <div class="flex items-end justify-between gap-3">
+                <h3 id="catalogo-profes" class="text-lg font-semibold">Profes</h3>
+                @if (teachersTotal() > teachers().length) {
+                  <a pButton routerLink="/profes" [queryParams]="{ q: query().q }" [label]="'Ver los ' + teachersTotal() + ' profes'" icon="pi pi-arrow-right" iconPos="right" size="small" [text]="true"></a>
+                }
+              </div>
+              <div class="mt-3 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                @for (teacher of teachers(); track teacher.uuid) {
+                  <app-teacher-card [teacher]="teacher" />
+                }
+              </div>
+            </section>
+            <h3 class="mt-8 text-lg font-semibold">Clases y cursos</h3>
+          }
+
           <div class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3" [attr.aria-busy]="loading()">
             @if (loading()) {
               @for (placeholder of placeholders; track placeholder) {
@@ -140,7 +163,9 @@ interface ActiveChip {
               @for (item of items(); track item.uuid) {
                 <app-catalog-card [item]="item" />
               } @empty {
-                @if (!error()) {
+                @if (!error() && teachers().length) {
+                  <p class="sm:col-span-2 xl:col-span-3">Ninguna clase ni curso coincide con esa búsqueda, pero encontramos estos profes.</p>
+                } @else if (!error()) {
                   <div class="rounded-2xl border border-dashed border-tz-line px-6 py-12 text-center sm:col-span-2 xl:col-span-3">
                     <i class="pi pi-search text-3xl text-tz-subtitle" aria-hidden="true"></i>
                     <p class="mt-3 font-semibold text-tz-title">No encontramos clases con esa búsqueda</p>
@@ -179,6 +204,7 @@ interface ActiveChip {
 })
 export class CatalogPage {
   private readonly service = inject(CatalogService);
+  private readonly teachersService = inject(TeachersService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -193,6 +219,9 @@ export class CatalogPage {
   protected draft = '';
   protected readonly areas = signal<CatalogArea[]>([]);
   protected readonly items = signal<CatalogItem[]>([]);
+  /** Profes que coinciden con la búsqueda escrita (solo se piden cuando hay texto) */
+  protected readonly teachers = signal<TeacherCardData[]>([]);
+  protected readonly teachersTotal = signal(0);
   protected readonly total = signal(0);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -280,13 +309,19 @@ export class CatalogPage {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const page = await this.service.list(toFilters(query));
+      const [page, teachers] = await Promise.all([
+        this.service.list(toFilters(query)),
+        query.q ? this.teachersService.list({ q: query.q, perPage: TEACHERS_SHOWN }).catch(() => null) : Promise.resolve(null)
+      ]);
       if (id !== this.requestId) return;
       this.items.set(page.items);
       this.total.set(page.total);
+      this.teachers.set(teachers?.items ?? []);
+      this.teachersTotal.set(teachers?.total ?? 0);
     } catch (err) {
       if (id !== this.requestId) return;
       this.items.set([]);
+      this.teachers.set([]);
       this.total.set(0);
       this.error.set(apiErrorMessage(err));
     } finally {

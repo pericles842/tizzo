@@ -36,10 +36,10 @@ describe('Dashboard: semana, datos por rol y menú', () => {
     expect(student).not.toContain('Estudiantes');
     expect(teacher).toContain('Estudiantes');
     expect(teacher).not.toContain('Profesores');
-    expect(student.length).toBe(7);
-    // "Perfil" (datos del profe, firma y credenciales) solo para profes, justo después de Inicio
-    expect(student).not.toContain('Perfil');
+    // "Perfil" lo ven los dos roles (cada uno su pantalla), justo después de Inicio
+    expect(student[1]).toBe('Perfil');
     expect(teacher[1]).toBe('Perfil');
+    expect(student.length).toBe(8);
     expect(teacher.length).toBe(8);
   });
 });

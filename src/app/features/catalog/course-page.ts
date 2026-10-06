@@ -34,6 +34,7 @@ import { CatalogDetail, CatalogService } from './catalog.service';
           [reserving]="reserving()"
           [blockedReason]="blockedReason()"
           (reserve)="reserve()"
+          (viewProfile)="viewProfile()"
         />
       } @else if (loading()) {
         <p-skeleton height="24rem" borderRadius="1rem" />
@@ -55,6 +56,12 @@ export class CoursePage implements OnInit {
   protected readonly reserving = signal(false);
   protected readonly notice = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
+
+  /** "Ver perfil" del profe: su página pública con todo lo que va a dar */
+  protected viewProfile(): void {
+    const teacher = this.data()?.course.teacher;
+    if (teacher) void this.router.navigate(['/profes', teacher.uuid]);
+  }
 
   protected readonly blockedReason = computed(() => {
     const current = this.data();

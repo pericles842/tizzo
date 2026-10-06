@@ -19,6 +19,8 @@ export interface CourseDetailSession {
 }
 
 export interface CourseDetailTeacher {
+  /** Uuid del perfil del profe (su página pública es /profes/:uuid) */
+  uuid: string;
   name: string;
   avatar_url: string | null;
   headline: string | null;

@@ -28,14 +28,24 @@
 
     <div id="destacados" class="mt-16 flex scroll-mt-24 items-end justify-between gap-4">
       <h2 class="text-2xl font-semibold sm:text-3xl">Profes destacados</h2>
-      <a pButton href="#destacados" label="Ver todos" icon="pi pi-arrow-right" iconPos="right" size="small" [text]="true"></a>
+      <a pButton routerLink="/profes" label="Ver todos" icon="pi pi-arrow-right" iconPos="right" size="small" [text]="true"></a>
     </div>
 
-    <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-label="Profes destacados">
-      @for (teacher of teachers(); track teacher.id) {
-        <li>
-          <app-teacher-card [teacher]="teacher" />
-        </li>
+    <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-label="Profes destacados" aria-live="polite">
+      @if (loading()) {
+        @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+          <li><p-skeleton height="19rem" borderRadius="1rem" /></li>
+        }
+      } @else {
+        @for (teacher of teachers(); track teacher.uuid) {
+          <li>
+            <app-teacher-card [teacher]="teacher" />
+          </li>
+        } @empty {
+          <li class="sm:col-span-2 lg:col-span-4">
+            {{ failed() ? 'No pudimos cargar los profes ahora. Intenta de nuevo en un momento.' : 'Todavía no hay profes aprobados. Vuelve pronto.' }}
+          </li>
+        }
       }
     </ul>
   </div>

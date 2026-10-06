@@ -23,6 +23,17 @@ export const routes: Routes = [
         path: 'clases/:slug',
         title: 'Clase · Tizzo',
         loadComponent: () => import('./features/catalog/course-page').then((m) => m.CoursePage)
+      },
+      // Profes: listado con buscador y perfil público de cada uno (clases por dar y favoritos)
+      {
+        path: 'profes',
+        title: 'Profes · Tizzo',
+        loadComponent: () => import('./features/teachers/teachers-page').then((m) => m.TeachersPage)
+      },
+      {
+        path: 'profes/:uuid',
+        title: 'Profe · Tizzo',
+        loadComponent: () => import('./features/teachers/teacher-page').then((m) => m.TeacherPage)
       }
     ]
   },

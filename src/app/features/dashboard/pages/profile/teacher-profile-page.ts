@@ -14,7 +14,7 @@ import { TeacherProfileService } from './teacher-profile.service';
 
 /**
  * "Perfil" del profe: aquí completa su foto, el titular, la biografía, sus especialidades (categorías con sus
- * años de experiencia), su firma para los diplomas y sus credenciales. Solo para profes (teacherGuard).
+ * años de experiencia), su firma para los diplomas y sus credenciales. Solo para profes (teacherMatch en la ruta; el estudiante ve student-profile).
  */
 @Component({
   selector: 'app-teacher-profile-page',

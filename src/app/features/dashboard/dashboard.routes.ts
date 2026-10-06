@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { teacherGuard, teacherMatch } from '../../core/auth/auth.guards';
+import { studentGuard, teacherMatch } from '../../core/auth/auth.guards';
 
 /** Secciones del menú que aún no existen: una sola página configurable desde `data` */
 const comingSoon = (path: string, pageTitle: string, icon: string, description: string) => ({
@@ -21,8 +21,15 @@ export const DASHBOARD_ROUTES: Routes = [
     path: 'perfil',
     title: 'Perfil · Tizzo',
     data: { pageTitle: 'Perfil' },
-    canActivate: [teacherGuard],
+    canMatch: [teacherMatch],
     loadComponent: () => import('./pages/profile/teacher-profile-page').then((m) => m.TeacherProfilePage)
+  },
+  {
+    // Estudiantes: su perfil (la ruta de arriba solo coincide con profes)
+    path: 'perfil',
+    title: 'Perfil · Tizzo',
+    data: { pageTitle: 'Perfil' },
+    loadComponent: () => import('./pages/student-profile/student-profile-page').then((m) => m.StudentProfilePage)
   },
   {
     // Profes: calendario para programar. Estudiantes: el de abajo, solo lectura con sus clases.
@@ -39,7 +46,14 @@ export const DASHBOARD_ROUTES: Routes = [
     loadComponent: () => import('./pages/student-calendar/student-calendar-page').then((m) => m.StudentCalendarPage)
   },
   comingSoon('certificados', 'Certificados', 'pi pi-verified', 'Aquí podrás ver y descargar tus diplomas.'),
-  comingSoon('profesores', 'Profesores', 'pi pi-user', 'Aquí verás a tus profes y podrás encontrar nuevos.'),
+  {
+    // Estudiantes: sus profes favoritos
+    path: 'profesores',
+    title: 'Profesores · Tizzo',
+    data: { pageTitle: 'Profesores' },
+    canActivate: [studentGuard],
+    loadComponent: () => import('./pages/favorite-teachers/favorite-teachers-page').then((m) => m.FavoriteTeachersPage)
+  },
   comingSoon('estudiantes', 'Estudiantes', 'pi pi-user', 'Aquí verás a tus estudiantes y su progreso.'),
   comingSoon('comunidad', 'Comunidad', 'pi pi-users', 'Un espacio para preguntar, compartir notas y aprender con otros.'),
   comingSoon('tareas', 'Tareas', 'pi pi-check-square', 'Aquí verás las tareas de tus cursos y sus fechas de entrega.'),

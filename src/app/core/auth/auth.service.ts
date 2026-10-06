@@ -3,7 +3,7 @@ import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CredentialPayload, RegisterPayload, SessionStatus, Topic, User } from './auth.models';
+import { CredentialPayload, RegisterPayload, SessionStatus, StudentProfilePayload, Topic, User } from './auth.models';
 
 /**
  * Estado de la sesión en signals. El token vive en una cookie httpOnly que maneja el navegador:
@@ -67,6 +67,13 @@ export class AuthService {
   /** Quita la foto de perfil (el header vuelve a mostrar las iniciales) */
   async removeAvatar(): Promise<User> {
     const { user } = await firstValueFrom(this.http.delete<{ user: User }>(`${this.api}/me/avatar`));
+    this.setUser(user);
+    return user;
+  }
+
+  /** Guarda el perfil del estudiante; el header y el resto del panel se actualizan con la sesión */
+  async updateStudentProfile(data: StudentProfilePayload): Promise<User> {
+    const { user } = await firstValueFrom(this.http.put<{ user: User }>(`${this.api}/student/profile`, data));
     this.setUser(user);
     return user;
   }

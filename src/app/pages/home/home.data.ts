@@ -1,9 +1,7 @@
 /**
  * Datos de EJEMPLO del home (solo UI, según el diseño de Figma).
- * Se reemplazarán por datos del API cuando existan cursos, clases en vivo y profes aprobados.
+ * Se reemplazarán por datos del API (la clase en vivo del hero y los chips de temas; los profes destacados y las clases ya son reales).
  */
-import { TeacherCardData } from '../../shared/teacher-card/teacher-card';
-
 export interface LiveClassPreview {
   title: string;
   progress: string;
@@ -32,13 +30,6 @@ export const HERO_LIVE_CLASS: LiveClassPreview = {
 export const HERO_HIGHLIGHTS = ['100% en vivo', 'Diploma al terminar', 'Pagos seguros'];
 
 export const TOPICS = ['Matemáticas', 'Idiomas', 'Programación', 'Música', 'Ciencias', 'Diseño', 'Oficios', 'Preparación de exámenes'];
-
-export const FEATURED_TEACHERS: TeacherCardData[] = [
-  { id: 'demo-1', name: 'Prof. Andrea M.', subjects: 'Matemáticas · Álgebra', rating: 4.9, classes: 120, price: 12, live: true },
-  { id: 'demo-2', name: 'Prof. Luis R.', subjects: 'Programación · Web', rating: 4.8, classes: 86, price: 15, live: false },
-  { id: 'demo-3', name: 'Prof. Camila S.', subjects: 'Inglés · Conversación', rating: 5, classes: 210, price: 10, live: true },
-  { id: 'demo-4', name: 'Prof. Carlos P.', subjects: 'Música · Guitarra', rating: 4.7, classes: 64, price: 14, live: false }
-];
 
 export const HOW_IT_WORKS: HowItWorksStep[] = [
   { title: 'Elige a tu profe', text: 'Busca por tema, precio y horario. Cada perfil tiene su propio precio.' },

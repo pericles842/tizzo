@@ -32,6 +32,8 @@ export interface CatalogFilters {
   /** Busca en el título, la descripción, el nombre del profe y el tema */
   q?: string;
   kind?: CourseKind | null;
+  /** Solo lo que da este profe (uuid de su perfil) */
+  teacher?: string;
   /** Slugs de áreas (categorías padre) */
   topics?: string[];
   prices?: PriceBand[];
@@ -84,6 +86,7 @@ export class CatalogService {
     let params = new HttpParams().set('tz_offset', -new Date().getTimezoneOffset());
     if (filters.q?.trim()) params = params.set('q', filters.q.trim());
     if (filters.kind) params = params.set('kind', filters.kind);
+    if (filters.teacher) params = params.set('teacher', filters.teacher);
     if (filters.topics?.length) params = params.set('topics', filters.topics.join(','));
     if (filters.prices?.length) params = params.set('price', filters.prices.join(','));
     if (filters.times?.length) params = params.set('time', filters.times.join(','));

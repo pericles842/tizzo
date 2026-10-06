@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { Avatar } from 'primeng/avatar';
 import { ButtonDirective } from 'primeng/button';
 import { Message } from 'primeng/message';
@@ -9,7 +9,7 @@ import { IMAGE_TYPES, checkFile } from '../../../../../../shared/form/form-utils
 import { WidgetCard } from '../../../../widgets/widget-card/widget-card';
 
 /**
- * Foto de perfil del profe. Usa la sesión (AuthService), así el header del dashboard
+ * Foto de perfil (profe y estudiante). Usa la sesión (AuthService), así el header del dashboard
  * cambia al mismo tiempo que se sube o se quita la foto.
  */
 @Component({
@@ -23,7 +23,7 @@ import { WidgetCard } from '../../../../widgets/widget-card/widget-card';
         } @else {
           <p-avatar [label]="initials()" shape="circle" size="xlarge" class="tz-bg-gradient shrink-0 font-display text-xl text-white" />
         }
-        <p class="text-sm">Una foto clara de tu rostro ayuda a que los estudiantes confíen en ti. JPG, PNG, WEBP o GIF, máx. 10 MB.</p>
+        <p class="text-sm">{{ hint() }}</p>
       </div>
 
       @if (error(); as message) {
@@ -50,6 +50,9 @@ import { WidgetCard } from '../../../../widgets/widget-card/widget-card';
 })
 export class PhotoCard {
   private readonly auth = inject(AuthService);
+
+  /** Texto de ayuda junto a la foto (por defecto, el del profe) */
+  readonly hint = input("Una foto clara de tu rostro ayuda a que los estudiantes confíen en ti. JPG, PNG, WEBP o GIF, máx. 10 MB.");
 
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);

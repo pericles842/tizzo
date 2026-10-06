@@ -20,6 +20,15 @@ export const teacherGuard: CanActivateFn = async () => {
   return auth.user()?.role === 'teacher' || router.createUrlTree(['/app']);
 };
 
+/** Solo estudiantes (favoritos). Un profe que entre por URL vuelve al inicio del dashboard. Usar después de authGuard. */
+export const studentGuard: CanActivateFn = async () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  await auth.ensureSession();
+  return auth.user()?.role === 'student' || router.createUrlTree(['/app']);
+};
+
 /**
  * Para elegir entre dos pantallas con la misma ruta según el rol: la primera ruta que lo use solo coincide con
  * profes y las demás (por ejemplo "Próximamente" de estudiantes) siguen de largo. Usar después de authGuard.

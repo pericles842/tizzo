@@ -14,7 +14,7 @@ export interface DashboardNavItem {
 /** Menú del dashboard. "Profesores" (estudiante) y "Estudiantes" (profe) cambian según el rol. */
 export const DASHBOARD_NAV: DashboardNavItem[] = [
   { label: 'Inicio', icon: 'pi pi-home', route: '/app' },
-  { label: 'Perfil', icon: 'pi pi-id-card', route: '/app/perfil', roles: ['teacher'] },
+  { label: 'Perfil', icon: 'pi pi-id-card', route: '/app/perfil' },
   { label: 'Calendario', icon: 'pi pi-calendar', route: '/app/calendario' },
   { label: 'Certificados', icon: 'pi pi-verified', route: '/app/certificados' },
   { label: 'Profesores', icon: 'pi pi-user', route: '/app/profesores', roles: ['student'] },

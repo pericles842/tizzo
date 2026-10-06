@@ -9,12 +9,12 @@ import { Tag } from 'primeng/tag';
 import { TeacherExplorer } from './components/teacher-explorer/teacher-explorer';
 import { AvailableClasses } from './components/available-classes/available-classes';
 import { HowItWorks } from './components/how-it-works/how-it-works';
-import { FEATURED_TEACHERS, HERO_HIGHLIGHTS, HERO_LIVE_CLASS, HOW_IT_WORKS, TOPICS } from './home.data';
+import { HERO_HIGHLIGHTS, HERO_LIVE_CLASS, HOW_IT_WORKS, TOPICS } from './home.data';
 
 /**
  * Home público (diseño de Figma): hero con buscador y clase en vivo, explorador de profes,
  * cómo funciona y llamado a profes. La sección "Clases disponibles" y el buscador usan el API (el catálogo /clases);
- * el resto (clase en vivo del hero, profes destacados, temas) sigue con datos de ejemplo.
+ * el resto (clase en vivo del hero, temas) sigue con datos de ejemplo; los profes destacados vienen del API.
  */
 @Component({
   selector: 'app-home',
@@ -27,7 +27,6 @@ export class Home {
   protected readonly liveClass = HERO_LIVE_CLASS;
   protected readonly highlights = HERO_HIGHLIGHTS;
   protected readonly topics = TOPICS;
-  protected readonly teachers = FEATURED_TEACHERS;
   protected readonly steps = HOW_IT_WORKS;
 
   /** El buscador del hero abre el catálogo con lo escrito */

@@ -54,6 +54,17 @@ export interface RegisterPayload {
   timezone?: string;
 }
 
+/** Datos que guarda el estudiante en su perfil (PUT /student/profile) */
+export interface StudentProfilePayload {
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  country_code: string;
+  age: number;
+  timezone: string;
+  topic_ids: number[];
+}
+
 export interface CredentialPayload {
   title: string;
   institution: string;

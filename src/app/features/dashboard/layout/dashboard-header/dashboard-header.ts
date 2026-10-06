@@ -68,8 +68,7 @@ export class DashboardHeader {
   protected readonly roleLabel = computed(() => (this.auth.user()?.role === 'teacher' ? 'Profe' : 'Estudiante'));
 
   protected readonly menuItems = computed<MenuItem[]>(() => [
-    // "Mi perfil" solo para profes (el perfil de estudiante todavía no existe)
-    ...(this.auth.user()?.role === 'teacher' ? [{ label: 'Mi perfil', icon: 'pi pi-id-card', routerLink: '/app/perfil' }] : []),
+    { label: 'Mi perfil', icon: 'pi pi-id-card', routerLink: '/app/perfil' },
     { label: 'Ir al sitio', icon: 'pi pi-external-link', routerLink: '/' },
     { separator: true },
     { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.logout.emit() }

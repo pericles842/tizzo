@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { studentGuard, teacherMatch } from '../../core/auth/auth.guards';
+import { studentGuard, teacherGuard, teacherMatch } from '../../core/auth/auth.guards';
 
 /** Secciones del menú que aún no existen: una sola página configurable desde `data` */
 const comingSoon = (path: string, pageTitle: string, icon: string, description: string) => ({
@@ -56,7 +56,47 @@ export const DASHBOARD_ROUTES: Routes = [
   },
   comingSoon('estudiantes', 'Estudiantes', 'pi pi-user', 'Aquí verás a tus estudiantes y su progreso.'),
   comingSoon('comunidad', 'Comunidad', 'pi pi-users', 'Un espacio para preguntar, compartir notas y aprender con otros.'),
-  comingSoon('tareas', 'Tareas', 'pi pi-check-square', 'Aquí verás las tareas de tus cursos y sus fechas de entrega.'),
+  // Tareas: el profe las crea y revisa; el estudiante ve las suyas y entrega. 'nueva' va antes de ':uuid'.
+  {
+    path: 'tareas',
+    title: 'Tareas · Tizzo',
+    data: { pageTitle: 'Tareas' },
+    canMatch: [teacherMatch],
+    loadComponent: () => import('./pages/tasks/teacher/teacher-tasks-page').then((m) => m.TeacherTasksPage)
+  },
+  {
+    path: 'tareas',
+    title: 'Mis tareas · Tizzo',
+    data: { pageTitle: 'Tareas' },
+    loadComponent: () => import('./pages/tasks/student/student-tasks-page').then((m) => m.StudentTasksPage)
+  },
+  {
+    path: 'tareas/nueva',
+    title: 'Nueva tarea · Tizzo',
+    data: { pageTitle: 'Tareas' },
+    canActivate: [teacherGuard],
+    loadComponent: () => import('./pages/tasks/teacher/task-editor-page').then((m) => m.TaskEditorPage)
+  },
+  {
+    path: 'tareas/:uuid/editar',
+    title: 'Editar tarea · Tizzo',
+    data: { pageTitle: 'Tareas' },
+    canActivate: [teacherGuard],
+    loadComponent: () => import('./pages/tasks/teacher/task-editor-page').then((m) => m.TaskEditorPage)
+  },
+  {
+    path: 'tareas/:uuid',
+    title: 'Tarea · Tizzo',
+    data: { pageTitle: 'Tareas' },
+    canMatch: [teacherMatch],
+    loadComponent: () => import('./pages/tasks/teacher/teacher-task-detail-page').then((m) => m.TeacherTaskDetailPage)
+  },
+  {
+    path: 'tareas/:uuid',
+    title: 'Tarea · Tizzo',
+    data: { pageTitle: 'Tareas' },
+    loadComponent: () => import('./pages/tasks/student/student-task-page').then((m) => m.StudentTaskPage)
+  },
   comingSoon('academias', 'Academias', 'pi pi-graduation-cap', 'Sedes que agrupan a varios profesores. Pronto podrás conocerlas y unirte a una.'),
   { path: '**', redirectTo: '' }
 ];

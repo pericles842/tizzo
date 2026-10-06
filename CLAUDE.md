@@ -63,7 +63,8 @@ pages/       páginas del sitio público
   login          AuthShell
   register       AuthShell, 4 pasos (diseño de Figma): datos personales, contraseña, objetivo, intereses
 features/    áreas grandes con su propio layout, rutas, páginas, widgets y datos
-  catalog/                   público: /clases (catalog-page, filtros clase/curso y búsqueda) y /clases/:slug (course-page: la pantalla
+  catalog/                   público: /clases (catalog-page: buscador único de profe/clase/curso, panel components/catalog-filters en columna o p-drawer en móvil,
+                             chips, orden y p-paginator; la búsqueda vive en la URL, ver catalog-query.ts) y /clases/:slug (course-page: la pantalla
                              de detalle con "Reservar"; sin sesión manda a /ingresar?redirect=... ; TEMPORAL: reservar confirma sin pago)
   room/                      /sala/:courseUuid (pantalla completa, authGuard): room-page con Daily en modo call object y la UI de Tizzo
                              (sala cerrada con la próxima clase, lobby, llamada, salió, terminó), video-tile (video o iniciales, audio,
@@ -135,7 +136,7 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
 
 ## Pruebas
 
-- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`, `TopicPicker`, reglas y medidor de contraseña, semana y menú por rol del dashboard, `FilePicker`, el porcentaje de perfil completo, las utilidades de fecha del calendario y `sessionPhase` (65 en total).
+- `npx ng test --watch=false --browsers=ChromeHeadless`: `App`, `ThemeService`, `AuthService`, `TeacherCard`, `TopicPicker`, reglas y medidor de contraseña, semana y menú por rol del dashboard, `FilePicker`, el porcentaje de perfil completo, las utilidades de fecha del calendario , `sessionPhase` y la búsqueda del catálogo en la URL (`catalog-query`) (72 en total).
 - `npx ng build` sin avisos.
 
 ## Estado (5 de octubre de 2026)

@@ -58,8 +58,8 @@ export class AvailableClasses implements OnInit {
   ngOnInit(): void {
     if (!this.isBrowser) return;
     this.service
-      .list()
-      .then((items) => this.items.set(items.slice(0, VISIBLE)))
+      .list({ perPage: VISIBLE })
+      .then(({ items }) => this.items.set(items))
       .catch(() => this.failed.set(true))
       .finally(() => this.loading.set(false));
   }

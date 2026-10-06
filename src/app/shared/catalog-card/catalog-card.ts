@@ -25,8 +25,14 @@ import { money } from '../course-detail/course-detail.utils';
       </div>
       <h3 class="mt-2 line-clamp-2 text-lg font-semibold leading-snug">{{ item().title }}</h3>
       <p class="mt-1 text-sm">Con {{ item().teacher.name }}</p>
+      @if (item().teacher.rating; as rating) {
+        <p class="mt-1 flex items-center gap-1 text-xs font-medium text-tz-subtitle">
+          <i class="pi pi-star-fill text-[0.7rem]" aria-hidden="true"></i>
+          <span>{{ rating.toFixed(1) }} · {{ item().teacher.reviews_count }} {{ item().teacher.reviews_count === 1 ? 'reseña' : 'reseñas' }}</span>
+        </p>
+      }
       @if (live()) {
-        <p class="mt-1 flex items-center gap-2 text-sm"><span class="tz-on-air-tag"><span class="tz-on-air-dot" aria-hidden="true"></span>EN VIVO</span> {{ when() }}</p>
+        <p class="mt-1 flex items-center gap-2 text-sm"><span class="tz-on-air-tag shrink-0 whitespace-nowrap"><span class="tz-on-air-dot" aria-hidden="true"></span>EN VIVO</span> {{ when() }}</p>
       } @else if (item().next_starts_at) {
         <p class="mt-1 flex items-center gap-2 text-sm"><i class="pi pi-calendar" aria-hidden="true"></i> {{ when() }}</p>
       }

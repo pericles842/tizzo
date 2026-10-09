@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { PendingReviews } from '../../widgets/pending-reviews/pending-reviews';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonDirective } from 'primeng/button';
@@ -26,7 +27,7 @@ import { CommunityFeed } from '../../widgets/community-feed/community-feed';
  */
 @Component({
   selector: 'app-dashboard-home',
-  imports: [RouterLink, ButtonDirective, Skeleton, LiveClassCard, StatCard, WeekCalendar, TaskList, PeopleList, CertificatesSummary, CommunityFeed],
+  imports: [RouterLink, ButtonDirective, Skeleton, LiveClassCard, StatCard, WeekCalendar, TaskList, PeopleList, CertificatesSummary, CommunityFeed, PendingReviews],
   templateUrl: './dashboard-home.html'
 })
 export class DashboardHome implements OnInit {

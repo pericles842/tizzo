@@ -35,7 +35,7 @@ export interface ParticipantView {
         autoplay
         playsinline
         [muted]="true"
-        class="size-full"
+        class="absolute inset-0 size-full"
         [class.hidden]="!showVideo()"
         [class.object-cover]="!screen()"
         [class.object-contain]="screen()"

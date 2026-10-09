@@ -28,6 +28,8 @@ export interface CourseDetailTeacher {
   years_experience: number | null;
   rating_avg: number;
   rating_count: number;
+  /** Estrellas del profe (0–5); null = profe nuevo */
+  stars: number | null;
 }
 
 export interface CourseDetail {

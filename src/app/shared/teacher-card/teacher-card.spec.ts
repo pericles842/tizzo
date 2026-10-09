@@ -34,7 +34,9 @@ describe('TeacherCard', () => {
     expect(el.textContent).toContain('Prof. Andrea Martínez');
     expect(el.textContent).toContain('Álgebra · Cálculo');
     expect(el.textContent).toContain('$12');
-    expect(el.textContent).toContain('4.9 · 120 reseñas');
+    expect(el.textContent).toContain('4.9');
+    expect(el.textContent).toContain('120 reseñas');
+    expect(el.querySelector('.p-rating')).not.toBeNull();
     expect(el.textContent).toContain('3 clases y cursos por dar');
     const link = el.querySelector('a');
     expect(link?.textContent).toContain('Ver perfil');

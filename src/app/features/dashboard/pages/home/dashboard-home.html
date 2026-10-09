@@ -40,6 +40,10 @@
   <app-task-list [heading]="d.copy.tasksTitle" [tasks]="d.tasks" [emptyText]="teacher ? 'Nada por revisar por ahora.' : 'No tienes tareas por entregar.'" />
 </div>
 
+@if (!teacher) {
+  <div class="mt-5"><app-pending-reviews /></div>
+}
+
 <!-- Fila 3: el estudiante ve sus profes, certificados y la comunidad; el profe, solo los certificados -->
 <div class="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
   @if (!teacher) {

@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, PLATFORM_ID, computed, inject, input, signal } from '@angular/core';
+import { RateClass } from '../../shared/review/rate-class';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ToastService } from '../../core/notify/toast.service';
@@ -11,6 +12,9 @@ import { Card } from 'primeng/card';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tooltip } from 'primeng/tooltip';
+import { Drawer } from 'primeng/drawer';
+import { OverlayBadge } from 'primeng/overlaybadge';
+import { ChatMessage, MAX_CHAT_LENGTH, RoomChat } from './room-chat';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { sessionPhase } from '../../core/live/session-phase';
 import { Logo } from '../../shared/logo/logo';
@@ -51,10 +55,11 @@ function toView(participant: DailyParticipant): ParticipantView {
  */
 @Component({
   selector: 'app-room-page',
-  imports: [RouterLink, ButtonDirective, Card, Message, ProgressSpinner, Tooltip, Logo, ThemeToggle, VideoTile, ConfirmDialog],
+  imports: [RouterLink, ButtonDirective, Card, Message, ProgressSpinner, Tooltip, Logo, ThemeToggle, VideoTile, ConfirmDialog, RateClass, Drawer, OverlayBadge, RoomChat],
   providers: [ConfirmationService],
   template: `
-    <div class="flex min-h-dvh flex-col bg-tz-canvas">
+    <!-- La sala mide exactamente la pantalla: el video se ajusta y los controles siempre se ven (sin scroll) -->
+    <div class="flex h-dvh flex-col bg-tz-canvas">
       <header class="flex h-16 shrink-0 items-center gap-3 border-b border-tz-line bg-tz-header px-4 backdrop-blur-md sm:px-6">
         <a routerLink="/app" class="tz-focus rounded-lg" aria-label="Ir al panel"><app-logo /></a>
         <div class="min-w-0 flex-1">
@@ -72,7 +77,7 @@ function toView(participant: DailyParticipant): ParticipantView {
         <app-theme-toggle />
       </header>
 
-      <main id="contenido" class="flex flex-1 flex-col">
+      <main id="contenido" class="flex min-h-0 flex-1 flex-col overflow-y-auto">
         @switch (stage()) {
           @case ('loading') {
             <div class="flex flex-1 items-center justify-center"><p-progress-spinner ariaLabel="Cargando la sala" /></div>
@@ -127,15 +132,15 @@ function toView(participant: DailyParticipant): ParticipantView {
             <div class="flex flex-1 flex-col items-center justify-center gap-3"><p-progress-spinner ariaLabel="Entrando a la clase" /><p class="text-sm">Entrando a la clase…</p></div>
           }
           @case ('in-call') {
-            <div class="flex flex-1 flex-col gap-3 p-3 sm:p-4">
+            <div class="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
               @if (notice(); as message) {
                 <p-message severity="warn" role="alert" [closable]="true" (onClose)="notice.set(null)">{{ message }}</p-message>
               }
 
               @if (sharer(); as presenter) {
                 <!-- Alguien comparte pantalla: la pantalla grande y las personas en una franja -->
-                <div class="grid flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]">
-                  <app-video-tile class="min-h-64" [participant]="presenter" [screen]="true" />
+                <div class="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_14rem]">
+                  <app-video-tile class="min-h-0" [participant]="presenter" [screen]="true" />
                   <div class="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-y-auto">
                     @for (person of participants(); track person.id) {
                       <app-video-tile class="aspect-video w-48 shrink-0 lg:w-full" [participant]="person" [canMute]="isTeacher()" (mute)="mute($event)" (eject)="askEject($event)" />
@@ -143,15 +148,16 @@ function toView(participant: DailyParticipant): ParticipantView {
                   </div>
                 </div>
               } @else {
-                <div class="grid flex-1 auto-rows-fr gap-3" [style.grid-template-columns]="gridColumns()">
+                <!-- Las filas se reparten el alto disponible; con muchas personas cada una mide al menos 10 rem y la rejilla se desplaza -->
+                <div class="grid min-h-0 flex-1 auto-rows-[minmax(10rem,1fr)] gap-3 overflow-y-auto" [style.grid-template-columns]="gridColumns()">
                   @for (person of participants(); track person.id) {
-                    <app-video-tile class="min-h-40" [participant]="person" [canMute]="isTeacher()" (mute)="mute($event)" (eject)="askEject($event)" />
+                    <app-video-tile class="min-h-0" [participant]="person" [canMute]="isTeacher()" (mute)="mute($event)" (eject)="askEject($event)" />
                   }
                 </div>
               }
 
               <!-- Controles -->
-              <nav class="flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-tz-line bg-tz-surface p-2" aria-label="Controles de la llamada">
+              <nav class="flex shrink-0 flex-wrap items-center justify-center gap-2 rounded-2xl border border-tz-line bg-tz-surface p-2" aria-label="Controles de la llamada">
                 @if (localAudio()) {
                   <button pButton type="button" icon="pi pi-microphone" severity="secondary" [rounded]="true" pTooltip="Apagar micrófono" tooltipPosition="top" aria-label="Apagar micrófono" (click)="toggleAudio()"></button>
                 } @else {
@@ -169,6 +175,13 @@ function toView(participant: DailyParticipant): ParticipantView {
                     <button pButton type="button" icon="pi pi-desktop" severity="secondary" [rounded]="true" pTooltip="Compartir pantalla" tooltipPosition="top" aria-label="Compartir pantalla" (click)="toggleScreen()"></button>
                   }
                 }
+                @if (unread() > 0 && !chatOpen()) {
+                  <p-overlaybadge [value]="unread()" severity="danger">
+                    <button pButton type="button" icon="pi pi-comments" severity="secondary" [rounded]="true" pTooltip="Chat de la clase" tooltipPosition="top" [attr.aria-label]="'Chat de la clase, ' + unread() + ' mensajes nuevos'" (click)="openChat()"></button>
+                  </p-overlaybadge>
+                } @else {
+                  <button pButton type="button" icon="pi pi-comments" severity="secondary" [rounded]="true" pTooltip="Chat de la clase" tooltipPosition="top" aria-label="Chat de la clase" (click)="openChat()"></button>
+                }
                 <span class="mx-1 flex items-center gap-1.5 text-sm" aria-live="polite"><i class="pi pi-users" aria-hidden="true"></i>{{ participants().length }}</span>
                 <button pButton type="button" icon="pi pi-sign-out" label="Salir" severity="danger" [rounded]="true" (click)="leave()"></button>
               </nav>
@@ -179,6 +192,11 @@ function toView(participant: DailyParticipant): ParticipantView {
               <p-card class="w-full max-w-md border border-tz-surface-border text-center">
                 <h1 class="text-xl font-semibold">Saliste de la clase</h1>
                 <p class="mt-2 text-sm">Puedes volver a entrar mientras la clase siga abierta.</p>
+                @if (canRate() && joined()?.session; as session) {
+                  <div class="mt-5 rounded-2xl bg-tz-soft p-4">
+                    <app-rate-class [sessionUuid]="session.uuid" [heading]="session.title" (rated)="rated.set(true)" />
+                  </div>
+                }
                 <div class="mt-5 flex flex-wrap justify-center gap-2">
                   <button pButton type="button" label="Volver a entrar" icon="pi pi-video" (click)="reload()"></button>
                   <a pButton routerLink="/app/calendario" label="Ir a mi calendario" severity="secondary" [outlined]="true"></a>
@@ -202,6 +220,11 @@ function toView(participant: DailyParticipant): ParticipantView {
                 <i class="pi pi-check-circle text-3xl text-tz-subtitle" aria-hidden="true"></i>
                 <h1 class="mt-3 text-xl font-semibold">La clase terminó</h1>
                 <p class="mt-2 text-sm">La sala se cerró al llegar la hora de fin.</p>
+                @if (canRate() && joined()?.session; as session) {
+                  <div class="mt-5 rounded-2xl bg-tz-soft p-4">
+                    <app-rate-class [sessionUuid]="session.uuid" [heading]="session.title" (rated)="rated.set(true)" />
+                  </div>
+                }
                 <a pButton routerLink="/app/calendario" label="Ir a mi calendario" icon="pi pi-calendar" class="mt-5"></a>
               </p-card>
             </div>
@@ -209,6 +232,10 @@ function toView(participant: DailyParticipant): ParticipantView {
         }
       </main>
     </div>
+    <p-drawer [visible]="chatOpen()" (visibleChange)="chatOpen.set($event)" position="right" header="Chat de la clase" styleClass="!w-full sm:!w-96">
+      <app-room-chat [messages]="messages()" (send)="sendChat($event)" />
+    </p-drawer>
+
     <p-confirmdialog rejectButtonStyleClass="p-button-text p-button-secondary" />
   `
 })
@@ -228,6 +255,22 @@ export class RoomPage implements OnInit {
   protected readonly participants = signal<ParticipantView[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+  // Chat de la clase: un solo canal para todos (sin privados); no se guarda nada
+  protected readonly chatOpen = signal(false);
+  protected readonly messages = signal<ChatMessage[]>([]);
+  protected readonly unread = signal(0);
+  private chatId = 0;
+  private lastSent = 0;
+
+  /** Ya calificó esta clase desde aquí */
+  protected readonly rated = signal(false);
+  /** El estudiante que asistió puede calificar cuando la clase ya terminó */
+  protected readonly canRate = computed(() => !this.isTeacher() && !this.rated() && !!this.joined() && this.classEnded());
+  private readonly classEnded = computed(() => {
+    this.now();
+    const session = this.joined()?.session;
+    return !!session && new Date(session.ends_at).getTime() <= Date.now();
+  });
   protected readonly localAudio = signal(false);
   protected readonly localVideo = signal(false);
   protected readonly localScreen = signal(false);
@@ -356,6 +399,16 @@ export class RoomPage implements OnInit {
   private listen(call: DailyCall): void {
     const sync = () => this.sync();
     call.on('participant-joined', sync).on('participant-updated', sync).on('participant-left', sync).on('track-started', sync).on('track-stopped', sync);
+    // Mensajes del chat: el nombre sale de la llamada (no del mensaje), así nadie puede escribir "como" otra persona
+    call.on('app-message', (event) => {
+      const data = event?.data as { type?: string; text?: unknown } | undefined;
+      if (data?.type !== 'chat' || typeof data.text !== 'string') return;
+      const text = data.text.trim().slice(0, MAX_CHAT_LENGTH);
+      if (!text) return;
+      const name = this.call?.participants()[event.fromId]?.user_name || 'Alguien';
+      this.pushMessage({ name, text, mine: false });
+      if (!this.chatOpen()) this.unread.update((count) => count + 1);
+    });
     call.on('camera-error', () => this.notice.set('No pudimos usar tu cámara o tu micrófono. Revisa los permisos del navegador.'));
     call.on('left-meeting', () => {
       // Si nadie pulsó "Salir", la sala nos sacó: terminó la clase, venció el token o el profe nos expulsó
@@ -407,6 +460,9 @@ export class RoomPage implements OnInit {
   }
 
   private async destroyCall(): Promise<void> {
+    this.chatOpen.set(false);
+    this.messages.set([]);
+    this.unread.set(0);
     const call = this.call;
     this.call = null;
     if (!call) return;
@@ -419,6 +475,28 @@ export class RoomPage implements OnInit {
   }
 
   // ---------- Controles ----------
+
+  protected openChat(): void {
+    this.unread.set(0);
+    this.chatOpen.set(true);
+  }
+
+  private pushMessage(message: { name: string; text: string; mine: boolean }): void {
+    // Solo se conservan los últimos 200 mensajes
+    this.messages.update((list) => [...list, { id: ++this.chatId, at: new Date(), ...message }].slice(-200));
+  }
+
+  /** Manda un mensaje a toda la clase ('*'); Daily no lo devuelve a quien lo envía, por eso se agrega aquí */
+  protected sendChat(text: string): void {
+    const call = this.call;
+    if (!call) return;
+    // Un mensaje por segundo como máximo (frena el spam)
+    if (Date.now() - this.lastSent < 1000) return;
+    this.lastSent = Date.now();
+    const clean = text.trim().slice(0, MAX_CHAT_LENGTH);
+    call.sendAppMessage({ type: 'chat', text: clean }, '*');
+    this.pushMessage({ name: this.joined()?.user_name ?? 'Tú', text: clean, mine: true });
+  }
 
   protected toggleAudio(): void {
     this.call?.setLocalAudio(!this.localAudio());

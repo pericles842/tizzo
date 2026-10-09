@@ -1,4 +1,5 @@
 import { Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { RankingCard } from './components/ranking-card/ranking-card';
 import { isPlatformBrowser } from '@angular/common';
 import { ButtonDirective } from 'primeng/button';
 import { Message } from 'primeng/message';
@@ -18,7 +19,7 @@ import { TeacherProfileService } from './teacher-profile.service';
  */
 @Component({
   selector: 'app-teacher-profile-page',
-  imports: [ButtonDirective, Message, ProfileSummary, PhotoCard, ProfileForm, SignatureCard, CredentialsCard],
+  imports: [ButtonDirective, Message, ProfileSummary, RankingCard, PhotoCard, ProfileForm, SignatureCard, CredentialsCard],
   template: `
     <header class="mb-6">
       <p class="font-display text-3xl font-semibold text-tz-title">Tu perfil de profe</p>
@@ -38,6 +39,7 @@ import { TeacherProfileService } from './teacher-profile.service';
         </div>
         <div class="space-y-5">
           <app-profile-summary [profile]="current" [specialtiesCount]="specialties().length" />
+          <app-ranking-card />
           <app-photo-card />
           <app-signature-card [profile]="current" (updated)="apply($event)" />
         </div>

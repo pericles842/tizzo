@@ -1,4 +1,5 @@
 import { Component, OnInit, PLATFORM_ID, computed, inject, input, signal } from '@angular/core';
+import { StarRating } from '../../shared/star-rating/star-rating';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Badge } from 'primeng/badge';
@@ -23,7 +24,7 @@ const UPCOMING_LIMIT = 48;
  */
 @Component({
   selector: 'app-teacher-page',
-  imports: [RouterLink, Badge, ButtonDirective, Card, Message, Skeleton, Tag, CatalogCard],
+  imports: [RouterLink, Badge, ButtonDirective, Card, Message, Skeleton, Tag, CatalogCard, StarRating],
   template: `
     <section class="tz-container py-8">
       <a pButton routerLink="/profes" label="Todos los profes" icon="pi pi-arrow-left" severity="secondary" [text]="true" class="mb-4"></a>
@@ -55,14 +56,7 @@ const UPCOMING_LIMIT = 48;
                 <p class="mt-1">{{ headline }}</p>
               }
               <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                @if (current.teacher.rating !== null) {
-                  <span class="flex items-center gap-1 font-medium text-tz-subtitle">
-                    <i class="pi pi-star-fill text-xs" aria-hidden="true"></i>
-                    {{ current.teacher.rating.toFixed(1) }} · {{ current.teacher.reviews_count }} {{ current.teacher.reviews_count === 1 ? 'reseña' : 'reseñas' }}
-                  </span>
-                } @else {
-                  <span class="font-medium text-tz-subtitle">Profe nuevo</span>
-                }
+                <app-star-rating [stars]="current.teacher.rating" [count]="current.teacher.reviews_count" />
                 @if (current.teacher.years_experience !== null) {
                   <span>{{ current.teacher.years_experience }} {{ current.teacher.years_experience === 1 ? 'año' : 'años' }} de experiencia</span>
                 }

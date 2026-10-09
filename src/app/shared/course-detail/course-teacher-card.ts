@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { StarRating } from '../star-rating/star-rating';
 import { Avatar } from 'primeng/avatar';
 import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -7,7 +8,7 @@ import { CourseDetailTeacher } from './course-detail.models';
 /** "Tu profe": foto, nombre, titular, años enseñando, calificación y presentación */
 @Component({
   selector: 'app-course-teacher-card',
-  imports: [Avatar, ButtonDirective, Card],
+  imports: [Avatar, ButtonDirective, Card, StarRating],
   template: `
     <p-card class="border border-tz-surface-border">
       <h2 class="font-display text-lg font-semibold">{{ heading() }}</h2>
@@ -22,9 +23,7 @@ import { CourseDetailTeacher } from './course-detail.models';
           @if (subtitle(); as text) {
             <p class="text-sm">{{ text }}</p>
           }
-          @if (teacher().rating_count > 0) {
-            <p class="mt-0.5 flex items-center gap-1 text-xs text-tz-subtitle"><i class="pi pi-star-fill text-[0.65rem]" aria-hidden="true"></i> {{ teacher().rating_avg.toFixed(1) }} · {{ teacher().rating_count }} reseñas</p>
-          }
+          <p class="mt-0.5"><app-star-rating [stars]="teacher().stars" [count]="teacher().rating_count" /></p>
         </div>
         <button pButton type="button" label="Ver perfil" size="small" severity="secondary" [outlined]="true" [disabled]="disabled()" (click)="viewProfile.emit()"></button>
       </div>

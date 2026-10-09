@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { StarRating } from '../star-rating/star-rating';
 import { RouterLink } from '@angular/router';
 import { Badge } from 'primeng/badge';
 import { ButtonDirective } from 'primeng/button';
@@ -14,7 +15,7 @@ export interface TeacherCardData {
   /** Nombres de sus especialidades */
   subjects: string[];
   years_experience: number | null;
-  /** Promedio de sus reseñas (null si todavía no tiene) */
+  /** Estrellas del profe (0–5, su puntuación en Tizzo); null = profe nuevo */
   rating: number | null;
   reviews_count: number;
   /** Clases sueltas y cursos publicados que todavía no terminan */
@@ -32,7 +33,7 @@ export interface TeacherCardData {
  */
 @Component({
   selector: 'app-teacher-card',
-  imports: [RouterLink, Card, Badge, ButtonDirective],
+  imports: [RouterLink, Card, Badge, ButtonDirective, StarRating],
   template: `
     <p-card class="h-full border border-tz-surface-border">
       <!-- La foto llena todo el recuadro; sin foto, las iniciales sobre el degradado de marca -->
@@ -49,12 +50,7 @@ export interface TeacherCardData {
         <p class="mt-0.5 line-clamp-2 text-sm">{{ text }}</p>
       }
       <p class="mt-1 text-xs font-medium text-tz-subtitle">
-        @if (teacher().rating !== null) {
-          <span aria-hidden="true">★</span>
-          <span class="sr-only">Calificación</span> {{ rating() }} · {{ teacher().reviews_count }} {{ teacher().reviews_count === 1 ? 'reseña' : 'reseñas' }}
-        } @else {
-          Profe nuevo
-        }
+        <app-star-rating [stars]="teacher().rating" [count]="teacher().reviews_count" />
       </p>
 
       <div class="mt-4 flex items-center justify-between gap-2">

@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { StarRating } from '../star-rating/star-rating';
 import { Badge } from 'primeng/badge';
 import { Tag } from 'primeng/tag';
 import { AUDIENCE_TAG } from '../../core/auth/age';
@@ -12,7 +13,7 @@ import { nextClassLabel, nextSession, typicalDuration } from './course-detail.ut
  */
 @Component({
   selector: 'app-course-hero',
-  imports: [Badge, Tag, CourseCover],
+  imports: [Badge, Tag, CourseCover, StarRating],
   template: `
     @if (course().cover_url) {
       <app-course-cover class="mb-5" variant="banner" [url]="course().cover_url" [alt]="'Miniatura de ' + course().title" />
@@ -29,8 +30,8 @@ import { nextClassLabel, nextSession, typicalDuration } from './course-detail.ut
     <h1 class="mt-3 font-display text-3xl font-semibold text-tz-title">{{ course().title }}</h1>
     <p class="mt-3 max-w-3xl whitespace-pre-line">{{ course().description }}</p>
     <ul class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" aria-label="Resumen">
-      @if (course().teacher.rating_count > 0) {
-        <li class="flex items-center gap-1"><i class="pi pi-star-fill text-xs text-tz-subtitle" aria-hidden="true"></i> {{ course().teacher.rating_avg.toFixed(1) }} ({{ course().teacher.rating_count }} reseñas)</li>
+      @if (course().teacher.stars !== null || course().teacher.rating_count > 0) {
+        <li><app-star-rating [stars]="course().teacher.stars" [count]="course().teacher.rating_count" /></li>
       }
       <li>{{ sessionsLabel() }}@if (duration(); as minutes) { · {{ minutes }} min }</li>
       @if (course().gives_certificate) {

@@ -129,6 +129,6 @@ export class StudentTasksPage implements OnInit {
   }
 
   protected due(task: StudentTask): string {
-    return task.state === 'submitted' && task.submission ? `Entregada · ${dueLabel(task.due_at)}` : dueLabel(task.due_at);
+    return task.state === 'submitted' ? `Entregada · ${dueLabel(task.due_at)}` : dueLabel(task.due_at);
   }
 }

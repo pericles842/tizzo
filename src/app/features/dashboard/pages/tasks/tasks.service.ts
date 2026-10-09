@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { StudentTask, StudentTaskState, TaskPayload, TaskStudent, TaskTargetCourse, TeacherTask, TeacherTaskFilters } from './tasks.models';
+import { QuizAnswerPayload, StudentTask, StudentTaskState, TaskPayload, TaskStudent, TaskTargetCourse, TeacherTask, TeacherTaskFilters } from './tasks.models';
 
 /** Llamadas del módulo de tareas. Los PDF son privados: se abren con un enlace al API (la cookie viaja sola). */
 @Injectable({ providedIn: 'root' })
@@ -78,6 +78,10 @@ export class TasksService {
     const form = new FormData();
     form.append('file', file);
     return firstValueFrom(this.http.put<{ task: StudentTask }>(`${this.api}/student/tasks/${uuid}/submission`, form)).then(({ task }) => task);
+  }
+
+  submitQuiz(uuid: string, answers: QuizAnswerPayload[]): Promise<StudentTask> {
+    return firstValueFrom(this.http.post<{ task: StudentTask }>(`${this.api}/student/tasks/${uuid}/quiz`, { answers })).then(({ task }) => task);
   }
 
   studentFileUrl(uuid: string): string {

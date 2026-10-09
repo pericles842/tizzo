@@ -30,7 +30,7 @@ describe('TeacherCard', () => {
 
   it('muestra iniciales, precio desde, calificación y "Ver perfil" (nunca "Reservar clase")', () => {
     const el = render(teacher);
-    expect(el.querySelector('.p-avatar')?.textContent?.trim()).toBe('AM');
+    expect(el.querySelector('.tz-bg-gradient')?.textContent?.trim()).toBe('AM');
     expect(el.textContent).toContain('Prof. Andrea Martínez');
     expect(el.textContent).toContain('Álgebra · Cálculo');
     expect(el.textContent).toContain('$12');

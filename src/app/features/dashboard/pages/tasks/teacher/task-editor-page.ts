@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, PLATFORM_ID, computed, inject, input, signal, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { Avatar } from 'primeng/avatar';
@@ -14,6 +14,7 @@ import { DatePicker } from 'primeng/datepicker';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
+import { SelectButton } from 'primeng/selectbutton';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
 import { Textarea } from 'primeng/textarea';
@@ -23,17 +24,33 @@ import { ChoiceCard } from '../../../../../shared/choice-card/choice-card';
 import { FieldError } from '../../../../../shared/form/field-error';
 import { applyServerErrors, focusFirstInvalid } from '../../../../../shared/form/form-utils';
 import { PdfDropzone } from '../components/pdf-dropzone';
-import { TaskPayload, TaskScope, TaskTargetCourse, TeacherTask } from '../tasks.models';
+import { QuestionPayload, QuizQuestion, TaskPayload, TaskScope, TaskTargetCourse, TaskType, TeacherTask } from '../tasks.models';
 import { TasksService } from '../tasks.service';
 import { dueLabel, formatDateTime } from '../tasks.utils';
 
 const MAX_INSTRUCTIONS = 5000;
+const MAX_OPTIONS = 8;
+const MAX_QUESTIONS = 50;
+
+type QuestionKindUi = 'options' | 'free_text';
+type OptionGroup = FormGroup<{ label: FormControl<string>; is_correct: FormControl<boolean> }>;
+type QuestionGroup = FormGroup<{ kind: FormControl<QuestionKindUi>; prompt: FormControl<string>; options: FormArray<OptionGroup> }>;
+
+/** Tipos de actividad: el quiz va primero porque es el que más se usa */
+const TYPES: { value: TaskType; title: string; description: string; icon: string }[] = [
+  { value: 'quiz', title: 'Quiz', description: 'Preguntas de opciones (A, B, C…) o de respuesta libre; las de opciones se califican solas.', icon: 'pi pi-list-check' },
+  { value: 'document', title: 'Documento', description: 'Adjuntas un PDF con la guía; si quieres, el estudiante entrega su respuesta en PDF.', icon: 'pi pi-file-pdf' }
+];
+
+const QUESTION_KINDS: { value: QuestionKindUi; label: string }[] = [
+  { value: 'options', label: 'Opciones' },
+  { value: 'free_text', label: 'Respuesta libre' }
+];
 
 /** Opciones de "¿A qué pertenece?" */
 const SCOPES: { value: TaskScope; title: string; description: string; icon: string }[] = [
   { value: 'course', title: 'Todo el curso', description: 'Para todos los inscritos del curso, sin una clase específica.', icon: 'pi pi-book' },
-  { value: 'class', title: 'Una clase', description: 'Una clase con fecha de un curso, o una clase suelta grupal.', icon: 'pi pi-calendar' },
-  { value: 'individual', title: 'Clase individual', description: 'Una clase 1 a 1 con un solo estudiante.', icon: 'pi pi-user' }
+  { value: 'class', title: 'Una clase', description: 'Una clase con fecha de un curso, o una clase suelta grupal.', icon: 'pi pi-calendar' }
 ];
 
 /**
@@ -57,6 +74,7 @@ const SCOPES: { value: TaskScope; title: string; description: string; icon: stri
     InputText,
     Message,
     Select,
+    SelectButton,
     Skeleton,
     Tag,
     Textarea,
@@ -74,7 +92,9 @@ const SCOPES: { value: TaskScope; title: string; description: string; icon: stri
         <p class="mt-1 text-sm">{{ locked() ? 'Ya está publicada: puedes cambiar el título, las instrucciones, ampliar la fecha y permitir entregas tardías.' : 'Arma la tarea; al publicarla se asigna sola a tus estudiantes y les llega un aviso.' }}</p>
       </div>
       @if (task(); as current) {
-        <p-tag [value]="current.status === 'draft' ? 'Borrador' : current.status === 'published' ? 'Publicada' : 'Cerrada'" [severity]="current.status === 'published' ? undefined : 'secondary'" [rounded]="true" />
+        @if (current.status !== 'draft') {
+          <p-tag [value]="current.status === 'published' ? 'Publicada' : 'Cerrada'" [severity]="current.status === 'published' ? undefined : 'secondary'" [rounded]="true" />
+        }
       }
     </header>
 
@@ -100,14 +120,19 @@ const SCOPES: { value: TaskScope; title: string; description: string; icon: stri
           <p-card class="border border-tz-surface-border">
             <h2 class="flex items-center gap-3 text-lg font-semibold"><span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-tz-soft text-sm font-bold text-tz-subtitle" aria-hidden="true">1</span> Tipo de actividad</h2>
             <div class="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de actividad">
-              <app-choice-card name="task-type" value="document" title="Documento" description="Adjuntas un PDF con la guía; si quieres, el estudiante entrega su respuesta en PDF." icon="pi pi-file-pdf" [selected]="'document'" />
-              <div class="flex items-center gap-4 rounded-2xl border-2 border-dashed border-tz-line p-4 opacity-70" aria-disabled="true">
-                <span class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-tz-soft text-tz-subtitle" aria-hidden="true"><i class="pi pi-list-check text-xl"></i></span>
-                <span class="min-w-0 flex-1">
-                  <span class="flex items-center gap-2 font-display font-semibold text-tz-title">Quiz <p-tag value="Muy pronto" severity="warn" [rounded]="true" /></span>
-                  <span class="mt-0.5 block text-sm">Preguntas que Tizzo califica solo.</span>
-                </span>
-              </div>
+              @for (option of types; track option.value) {
+                @if (!locked() || option.value === type()) {
+                  <app-choice-card
+                    name="task-type"
+                    [value]="option.value"
+                    [title]="option.title"
+                    [description]="option.description"
+                    [icon]="option.icon"
+                    [selected]="type()"
+                    (selectedChange)="setType($event)"
+                  />
+                }
+              }
             </div>
           </p-card>
 
@@ -118,9 +143,12 @@ const SCOPES: { value: TaskScope; title: string; description: string; icon: stri
               <p-message severity="secondary" styleClass="mt-4">Todavía no tienes clases ni cursos publicados. Programa uno desde tu calendario para ponerle tareas.</p-message>
             }
             <div class="mt-4 grid gap-3" role="radiogroup" aria-label="A qué pertenece la tarea" aria-describedby="scope-error">
-              @for (option of scopes; track option.value) {
+              @for (option of scopeOptions(); track option.value) {
                 @if (locked() && option.value !== scope()) {
                   <!-- publicada: solo se muestra el alcance elegido -->
+                }
+                @else if (option.value === 'individual' && scope() !== 'individual') {
+                  <!-- clase individual: ya no se ofrece -->
                 } @else {
                   <app-choice-card
                     name="task-scope"
@@ -230,6 +258,7 @@ const SCOPES: { value: TaskScope; title: string; description: string; icon: stri
           </p-card>
 
           <!-- 5. Documento -->
+          @if (type() === 'document') {
           <p-card class="border border-tz-surface-border">
             <h2 class="flex items-center gap-3 text-lg font-semibold"><span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-tz-soft text-sm font-bold text-tz-subtitle" aria-hidden="true">5</span> Documento</h2>
             <div class="mt-4 space-y-4">
@@ -249,6 +278,64 @@ const SCOPES: { value: TaskScope; title: string; description: string; icon: stri
               </div>
             </div>
           </p-card>
+          } @else {
+          <!-- 5. Preguntas -->
+          <p-card class="border border-tz-surface-border">
+            <h2 class="flex items-center gap-3 text-lg font-semibold"><span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-tz-soft text-sm font-bold text-tz-subtitle" aria-hidden="true">5</span> Preguntas</h2>
+            <p class="mt-1 text-sm">{{ locked() ? 'El quiz ya está publicado: las preguntas no se pueden cambiar.' : 'Elige el tipo de cada pregunta. En las de opciones marca la correcta (o varias).' }}</p>
+
+            @if (questionErrors()['questions']; as message) {
+              <p class="mt-3 flex items-start gap-1.5 text-sm text-red-600 dark:text-red-300" role="alert"><i class="pi pi-exclamation-circle mt-0.5 text-xs" aria-hidden="true"></i>{{ message }}</p>
+            }
+
+            <div formArrayName="questions" class="mt-4 space-y-4">
+              @for (question of questions.controls; track question; let qi = $index) {
+                <div [formGroupName]="qi" [id]="'question-' + qi" class="rounded-2xl border border-tz-line p-4">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p class="font-display font-semibold text-tz-title">Pregunta {{ qi + 1 }}</p>
+                    <div class="flex items-center gap-1">
+                      <p-selectbutton [options]="questionKinds" optionLabel="label" optionValue="value" formControlName="kind" [allowEmpty]="false" size="small" [attr.aria-label]="'Tipo de la pregunta ' + (qi + 1)" />
+                      @if (!locked()) {
+                        <button pButton type="button" icon="pi pi-trash" severity="secondary" [text]="true" [rounded]="true" [attr.aria-label]="'Quitar la pregunta ' + (qi + 1)" (click)="removeQuestion(qi)"></button>
+                      }
+                    </div>
+                  </div>
+                  <textarea pTextarea formControlName="prompt" rows="2" class="mt-3 w-full" maxlength="1000" placeholder="Escribe la pregunta" [attr.aria-label]="'Texto de la pregunta ' + (qi + 1)"></textarea>
+
+                  @if (question.controls.kind.value === 'options') {
+                    <div formArrayName="options" class="mt-3 space-y-2">
+                      @for (option of question.controls.options.controls; track option; let oi = $index) {
+                        <div [formGroupName]="oi" class="flex items-center gap-2 sm:gap-3">
+                          <p-checkbox formControlName="is_correct" [binary]="true" [attr.aria-label]="'La respuesta ' + letter(oi) + ' es correcta'" />
+                          <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-tz-soft text-xs font-bold text-tz-subtitle" aria-hidden="true">{{ letter(oi) }}</span>
+                          <input pInputText formControlName="label" class="min-w-0 flex-1" maxlength="300" [placeholder]="'Respuesta ' + letter(oi)" [attr.aria-label]="'Respuesta ' + letter(oi) + ' de la pregunta ' + (qi + 1)" />
+                          @if (!locked() && question.controls.options.length > 2) {
+                            <button pButton type="button" icon="pi pi-times" severity="secondary" [text]="true" [rounded]="true" [attr.aria-label]="'Quitar la respuesta ' + letter(oi)" (click)="removeOption(qi, oi)"></button>
+                          }
+                        </div>
+                      }
+                    </div>
+                    @if (!locked() && question.controls.options.length < maxOptions) {
+                      <button pButton type="button" label="Agregar respuesta" icon="pi pi-plus" severity="secondary" [text]="true" class="mt-2 -ml-3" (click)="addOption(qi)"></button>
+                    }
+                  } @else {
+                    <p class="mt-3 text-sm">El estudiante escribe su respuesta y tú la lees en el detalle de la tarea: no se califica sola.</p>
+                  }
+
+                  @for (key of [qi + '', qi + '.options', qi + '.points']; track key) {
+                    @if (questionErrors()['questions.' + key]; as message) {
+                      <p class="mt-2 flex items-start gap-1.5 text-sm text-red-600 dark:text-red-300" role="alert"><i class="pi pi-exclamation-circle mt-0.5 text-xs" aria-hidden="true"></i>{{ message }}</p>
+                    }
+                  }
+                </div>
+              }
+            </div>
+
+            @if (!locked()) {
+              <button pButton type="button" label="Agregar pregunta" icon="pi pi-plus" severity="warn" class="mt-4" [disabled]="questions.length >= maxQuestions" (click)="addQuestion()"></button>
+            }
+          </p-card>
+          }
         </div>
 
         <!-- Panel lateral -->
@@ -284,27 +371,17 @@ const SCOPES: { value: TaskScope; title: string; description: string; icon: stri
               <div class="min-w-0 text-sm">
                 <p class="font-semibold text-tz-title">Nueva tarea en {{ selectedCourse()?.title || 'tu curso' }}</p>
                 <p class="mt-0.5 truncate">{{ form.controls.title.value || 'Título de la tarea' }}</p>
-                <p class="mt-0.5 text-xs">Entrega: {{ previewDue() }} · {{ fileName() ? '1 PDF adjunto' : 'Documento' }}</p>
+                <p class="mt-0.5 text-xs">Entrega: {{ previewDue() }} · {{ previewDetail() }}</p>
               </div>
             </div>
-            <div class="mt-4 space-y-1">
-              <div class="flex min-h-11 items-center gap-3">
-                <p-checkbox inputId="notify-platform" [binary]="true" [ngModel]="true" [ngModelOptions]="{ standalone: true }" [disabled]="true" />
-                <label for="notify-platform" class="text-sm text-tz-title">En la plataforma (campana)</label>
-              </div>
-              <div class="flex min-h-11 items-center gap-3">
-                <p-checkbox inputId="notify-email" formControlName="notify_email" [binary]="true" />
-                <label for="notify-email" class="text-sm text-tz-title">Por correo <span class="text-xs">(próximamente)</span></label>
-              </div>
-            </div>
+            <p class="mt-3 text-xs">Les llega a la campana de la plataforma.</p>
           </p-card>
 
           <div class="flex flex-col gap-2">
             @if (locked()) {
               <button pButton type="button" label="Guardar cambios" icon="pi pi-save" [loading]="saving()" [disabled]="saving()" [fluid]="true" (click)="save(false)"></button>
             } @else {
-              <button pButton type="button" label="Publicar y notificar" icon="pi pi-send" [loading]="saving() && publishing()" [disabled]="saving()" [fluid]="true" (click)="askPublish()"></button>
-              <button pButton type="button" label="Guardar borrador" icon="pi pi-save" severity="secondary" [outlined]="true" [loading]="saving() && !publishing()" [disabled]="saving()" [fluid]="true" (click)="save(false)"></button>
+              <button pButton type="button" label="Publicar y notificar" icon="pi pi-send" [loading]="saving()" [disabled]="saving()" [fluid]="true" (click)="askPublish()"></button>
             }
             <a pButton [routerLink]="task() ? ['/app/tareas', task()!.uuid] : '/app/tareas'" label="Cancelar" severity="secondary" [text]="true" [fluid]="true"></a>
           </div>
@@ -326,10 +403,14 @@ export class TaskEditorPage implements OnInit {
   /** Viene de la ruta al editar (/app/tareas/:uuid/editar) */
   readonly uuid = input<string>();
 
-  protected readonly scopes = SCOPES;
+  protected readonly types = TYPES;
+  protected readonly questionKinds = QUESTION_KINDS;
   protected readonly maxInstructions = MAX_INSTRUCTIONS;
+  protected readonly maxOptions = MAX_OPTIONS;
+  protected readonly maxQuestions = MAX_QUESTIONS;
 
   protected readonly form = this.fb.group({
+    type: this.fb.control<TaskType>('quiz'),
     scope: this.fb.control<TaskScope | null>(null, Validators.required),
     course_id: this.fb.control<string | null>(null, Validators.required),
     session_id: this.fb.control<string | null>(null),
@@ -338,8 +419,12 @@ export class TaskEditorPage implements OnInit {
     due_at: this.fb.control<Date | null>(null, Validators.required),
     allow_late: false,
     requires_submission: true,
-    notify_email: false
+    questions: this.fb.array<QuestionGroup>([this.questionGroup()])
   });
+
+  protected readonly questions = this.form.controls.questions;
+  protected readonly type = signal<TaskType>('quiz');
+  protected readonly questionErrors = signal<Record<string, string>>({});
 
   protected readonly targets = signal<TaskTargetCourse[]>([]);
   protected readonly task = signal<TeacherTask | null>(null);
@@ -355,6 +440,10 @@ export class TaskEditorPage implements OnInit {
   private readonly titleValue = toSignal(this.form.controls.title.valueChanges, { initialValue: '' });
   private readonly dueValue = toSignal(this.form.controls.due_at.valueChanges, { initialValue: null });
   protected readonly scope = signal<TaskScope | null>(null);
+  private readonly questionsValue = toSignal(this.questions.valueChanges, { initialValue: this.questions.getRawValue() });
+
+  /** La clase individual (1 a 1) ya no se ofrece; solo aparece si la tarea ya la tenía */
+  protected readonly scopeOptions = computed(() => SCOPES.filter((option) => option.value !== 'individual' || this.scope() === 'individual'));
 
   /** Publicada o cerrada: tipo, alcance y entrega quedan fijos */
   protected readonly locked = computed(() => !!this.task() && this.task()!.status !== 'draft');
@@ -391,6 +480,12 @@ export class TaskEditorPage implements OnInit {
     return `Todos los inscritos en ${course.title}. Quien se inscriba después también la recibirá.`;
   });
 
+  protected readonly previewDetail = computed(() => {
+    if (this.type() === 'document') return this.fileName() ? '1 PDF adjunto' : 'Documento';
+    const count = this.questionsValue().length;
+    return `Quiz · ${count} ${count === 1 ? 'pregunta' : 'preguntas'}`;
+  });
+
   protected readonly previewDue = computed(() => {
     this.titleValue();
     const due = this.dueValue();
@@ -417,7 +512,9 @@ export class TaskEditorPage implements OnInit {
   private fill(task: TeacherTask): void {
     this.task.set(task);
     this.scope.set(task.scope);
+    this.type.set(task.type);
     this.form.reset({
+      type: task.type,
       scope: task.scope,
       course_id: task.course_id,
       session_id: task.session_id,
@@ -425,12 +522,90 @@ export class TaskEditorPage implements OnInit {
       instructions: task.instructions ?? '',
       due_at: new Date(task.due_at),
       allow_late: task.allow_late,
-      requires_submission: task.requires_submission,
-      notify_email: task.notify_email
+      requires_submission: task.requires_submission
     });
+    this.questions.clear();
+    for (const question of task.questions) this.questions.push(this.questionFrom(question));
+    if (!this.questions.length) this.questions.push(this.questionGroup());
     if (task.status !== 'draft') {
-      for (const key of ['scope', 'course_id', 'session_id', 'requires_submission'] as const) this.form.controls[key].disable();
+      for (const key of ['type', 'scope', 'course_id', 'session_id', 'requires_submission'] as const) this.form.controls[key].disable();
+      this.questions.disable();
     }
+  }
+
+  // ---------- Quiz: preguntas ----------
+
+  private optionGroup(label = '', isCorrect = false): OptionGroup {
+    return this.fb.group({ label: [label], is_correct: [isCorrect] });
+  }
+
+  /** Pregunta nueva: de opciones con dos respuestas vacías */
+  private questionGroup(kind: QuestionKindUi = 'options', prompt = '', options: OptionGroup[] = [this.optionGroup(), this.optionGroup()]): QuestionGroup {
+    return this.fb.group({ kind: this.fb.control<QuestionKindUi>(kind), prompt: [prompt], options: this.fb.array<OptionGroup>(options) });
+  }
+
+  private questionFrom(question: QuizQuestion): QuestionGroup {
+    const kind: QuestionKindUi = question.kind === 'free_text' ? 'free_text' : 'options';
+    const options = question.options.map((option) => this.optionGroup(option.label, !!option.is_correct));
+    return this.questionGroup(kind, question.prompt, options.length ? options : undefined);
+  }
+
+  protected letter(index: number): string {
+    return String.fromCharCode(65 + index);
+  }
+
+  protected addQuestion(): void {
+    if (this.questions.length >= MAX_QUESTIONS) return;
+    this.questions.push(this.questionGroup());
+    this.questionErrors.set({});
+  }
+
+  protected removeQuestion(index: number): void {
+    this.questions.removeAt(index);
+    this.questionErrors.set({});
+  }
+
+  protected addOption(question: number): void {
+    const options = this.questions.at(question).controls.options;
+    if (options.length < MAX_OPTIONS) options.push(this.optionGroup());
+  }
+
+  protected removeOption(question: number, option: number): void {
+    const options = this.questions.at(question).controls.options;
+    if (options.length > 2) options.removeAt(option);
+  }
+
+  protected setType(value: string | null): void {
+    if (this.locked() || !value) return;
+    this.type.set(value as TaskType);
+    this.form.controls.type.setValue(value as TaskType);
+    this.questionErrors.set({});
+    this.fileError.set(null);
+  }
+
+  /** Revisa las preguntas con las mismas reglas del API: texto, 2 a 8 respuestas llenas y al menos una correcta */
+  private validateQuestions(): boolean {
+    const errors: Record<string, string> = {};
+    const list = this.questions.getRawValue();
+    if (!list.length) errors['questions'] = 'Agrega al menos una pregunta.';
+    list.forEach((question, index) => {
+      if (!question.prompt.trim()) errors[`questions.${index}`] = 'Escribe la pregunta.';
+      if (question.kind !== 'options') return;
+      if (question.options.length < 2) errors[`questions.${index}.options`] = 'Pon al menos 2 respuestas.';
+      else if (question.options.some((option) => !option.label.trim())) errors[`questions.${index}.options`] = 'Escribe todas las respuestas o quita las vacías.';
+      else if (!question.options.some((option) => option.is_correct)) errors[`questions.${index}.options`] = 'Marca al menos una respuesta correcta.';
+    });
+    this.questionErrors.set(errors);
+    return !Object.keys(errors).length;
+  }
+
+  /** Lo que se envía de las preguntas (sin las respuestas de una pregunta libre) */
+  private questionPayload(): QuestionPayload[] {
+    return this.questions.getRawValue().map((question) => ({
+      kind: question.kind,
+      prompt: question.prompt.trim(),
+      options: question.kind === 'options' ? question.options.map((option) => ({ label: option.label.trim(), is_correct: option.is_correct })) : []
+    }));
   }
 
   protected setScope(value: string | null): void {
@@ -498,9 +673,19 @@ export class TaskEditorPage implements OnInit {
       this.form.controls.due_at.setErrors({ server: 'La fecha límite debe ser futura.' });
       valid = false;
     }
-    if (publish && !this.fileName()) {
+    if (publish && raw.type === 'document' && !this.fileName()) {
       this.fileError.set('Adjunta el PDF con las instrucciones.');
       valid = false;
+    }
+    if (raw.type === 'quiz' && !this.locked() && !this.validateQuestions()) {
+      valid = false;
+      // Si el resto del formulario está bien, lleva a la primera pregunta con error
+      if (this.form.controls.title.valid && this.form.controls.due_at.valid) {
+        const first = Object.keys(this.questionErrors()).find((key) => key.startsWith('questions.'));
+        const id = first ? `question-${first.split('.')[1]}` : 'task-title';
+        setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+        return false;
+      }
     }
     if (!valid) setTimeout(() => focusFirstInvalid(this.formEl()?.nativeElement));
     return valid;
@@ -529,7 +714,7 @@ export class TaskEditorPage implements OnInit {
 
     const raw = this.form.getRawValue();
     const payload: TaskPayload = {
-      type: 'document',
+      type: raw.type,
       scope: raw.scope!,
       course_id: raw.course_id!,
       session_id: raw.scope === 'class' ? raw.session_id : null,
@@ -537,8 +722,9 @@ export class TaskEditorPage implements OnInit {
       instructions: raw.instructions.trim() || null,
       due_at: raw.due_at!.toISOString(),
       allow_late: raw.allow_late,
-      requires_submission: raw.requires_submission,
-      notify_email: raw.notify_email
+      requires_submission: raw.type === 'document' && raw.requires_submission,
+      notify_email: false,
+      ...(raw.type === 'quiz' ? { questions: this.questionPayload() } : {})
     };
 
     this.saving.set(true);
@@ -555,7 +741,7 @@ export class TaskEditorPage implements OnInit {
       }
       let notice = current ? 'Cambios guardados.' : 'Borrador guardado.';
       if (publish) {
-        const { assigned } = await this.service.publish(saved.uuid, raw.notify_email);
+        const { assigned } = await this.service.publish(saved.uuid, false);
         notice = assigned === 0 ? 'Tarea publicada. La recibirán quienes se inscriban.' : `Tarea publicada: llegó a ${assigned} ${assigned === 1 ? 'estudiante' : 'estudiantes'}.`;
       }
       void this.router.navigate(['/app/tareas', saved.uuid], { state: { notice } });
@@ -572,6 +758,7 @@ export class TaskEditorPage implements OnInit {
         requires_submission: controls.requires_submission
       });
       if (fields['file']) this.fileError.set(fields['file']);
+      this.questionErrors.set(Object.fromEntries(Object.entries(fields).filter(([key]) => key === 'questions' || key.startsWith('questions.'))));
       this.error.set(apiErrorMessage(err));
     } finally {
       this.saving.set(false);

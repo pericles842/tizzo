@@ -6,6 +6,45 @@ export type TaskStatus = 'draft' | 'published' | 'closed';
 /** Estado de una tarea para el estudiante */
 export type StudentTaskState = 'pending' | 'submitted' | 'overdue' | 'done';
 
+export type QuestionKind = 'single' | 'multiple' | 'true_false' | 'free_text';
+
+/** Opción de una pregunta; `is_correct` solo lo ve el profe (o el estudiante cuando ya puede ver las respuestas) */
+export interface QuizOption {
+  uuid: string;
+  label: string;
+  is_correct?: boolean;
+}
+
+export interface QuizQuestion {
+  uuid: string;
+  position: number;
+  kind: QuestionKind;
+  prompt: string;
+  points: number;
+  options: QuizOption[];
+}
+
+/** Lo que respondió un estudiante a una pregunta; `is_correct` es null en las de respuesta libre */
+export interface QuizAnswer {
+  question_id: string;
+  option_ids: string[];
+  text: string | null;
+  is_correct: boolean | null;
+  points_awarded: number | null;
+}
+
+/** Intento (único) de un quiz. `grade` es sobre 100 y null si solo tiene preguntas de respuesta libre. */
+export interface QuizAttempt {
+  submitted_at: string;
+  is_late: boolean;
+  score: number | null;
+  max_score: number | null;
+  grade: number | null;
+  /** Respuestas libres que lee el profe */
+  pending_review: number;
+  answers: QuizAnswer[];
+}
+
 export interface TaskCourseRef {
   uuid: string;
   title: string;
@@ -48,6 +87,8 @@ export interface TeacherTask {
   created_at: string;
   updated_at: string;
   stats: { assigned: number; submitted: number; late: number } | null;
+  /** Solo quiz */
+  questions: QuizQuestion[];
 }
 
 /** Un estudiante asignado, en el detalle del profe */
@@ -58,6 +99,8 @@ export interface TaskStudent {
   assigned_at: string;
   state: StudentTaskState;
   submission: TaskSubmissionInfo | null;
+  /** Solo quiz */
+  attempt: QuizAttempt | null;
 }
 
 /** Tarea vista por un estudiante asignado */
@@ -79,6 +122,8 @@ export interface StudentTask {
   can_submit: boolean;
   past_due: boolean;
   submission: TaskSubmissionInfo | null;
+  /** Solo quiz: las preguntas (para responder o repasar) y su intento */
+  quiz: { questions: QuizQuestion[]; attempt: QuizAttempt | null } | null;
 }
 
 /** Clase o curso del profe para el selector del editor (GET /teacher/task-targets) */
@@ -107,6 +152,22 @@ export interface TaskPayload {
   allow_late: boolean;
   requires_submission: boolean;
   notify_email: boolean;
+  /** Solo quiz */
+  questions?: QuestionPayload[];
+}
+
+/** Pregunta que se envía al guardar un quiz: de opciones (con sus correctas) o de respuesta libre */
+export interface QuestionPayload {
+  kind: 'options' | 'free_text';
+  prompt: string;
+  options: { label: string; is_correct: boolean }[];
+}
+
+/** Respuesta del estudiante al enviar un quiz */
+export interface QuizAnswerPayload {
+  question_id: string;
+  option_ids: string[];
+  text: string;
 }
 
 export interface TeacherTaskFilters {

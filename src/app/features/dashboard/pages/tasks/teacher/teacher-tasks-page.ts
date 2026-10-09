@@ -73,9 +73,9 @@ import { STATUS_TAG, TYPE_ICON, TYPE_LABEL, dueLabel, targetLabel } from '../tas
               </span>
               @if (task.stats && task.status !== 'draft') {
                 <span class="w-full shrink-0 sm:w-44">
-                  @if (task.requires_submission) {
-                    <span class="flex justify-between text-xs"><span>Entregaron</span><span class="font-semibold text-tz-title">{{ task.stats.submitted }} de {{ task.stats.assigned }}</span></span>
-                    <p-progressbar [value]="percent(task)" [showValue]="false" class="mt-1.5 block h-1.5" [attr.aria-label]="task.stats.submitted + ' de ' + task.stats.assigned + ' entregaron'" />
+                  @if (task.requires_submission || task.type === 'quiz') {
+                    <span class="flex justify-between text-xs"><span>{{ task.type === 'quiz' ? 'Respondieron' : 'Entregaron' }}</span><span class="font-semibold text-tz-title">{{ task.stats.submitted }} de {{ task.stats.assigned }}</span></span>
+                    <p-progressbar [value]="percent(task)" [showValue]="false" class="mt-1.5 block h-1.5" [attr.aria-label]="task.stats.submitted + ' de ' + task.stats.assigned + ' completaron'" />
                   } @else {
                     <span class="text-xs">Solo lectura · {{ task.stats.assigned }} {{ task.stats.assigned === 1 ? 'estudiante' : 'estudiantes' }}</span>
                   }
@@ -88,7 +88,7 @@ import { STATUS_TAG, TYPE_ICON, TYPE_LABEL, dueLabel, targetLabel } from '../tas
           <li class="rounded-2xl border border-dashed border-tz-line px-6 py-12 text-center">
             <i class="pi pi-check-square text-3xl text-tz-subtitle" aria-hidden="true"></i>
             <p class="mt-3 font-semibold text-tz-title">{{ filtered() ? 'Ninguna tarea con esos filtros' : 'Todavía no tienes tareas' }}</p>
-            <p class="mt-1 text-sm">{{ filtered() ? 'Prueba con otros filtros.' : 'Crea una guía en PDF para tus estudiantes; les llegará un aviso al publicarla.' }}</p>
+            <p class="mt-1 text-sm">{{ filtered() ? 'Prueba con otros filtros.' : 'Crea un quiz o una guía en PDF para tus estudiantes; les llegará un aviso al publicarla.' }}</p>
             @if (!filtered()) {
               <a pButton routerLink="/app/tareas/nueva" label="Nueva tarea" icon="pi pi-plus" class="mt-4"></a>
             }
@@ -110,7 +110,6 @@ export class TeacherTasksPage implements OnInit {
     { value: 'quiz', label: 'Quiz' }
   ];
   protected readonly statusOptions: { value: TaskStatus; label: string }[] = [
-    { value: 'draft', label: 'Borradores' },
     { value: 'published', label: 'Publicadas' },
     { value: 'closed', label: 'Cerradas' }
   ];

@@ -1,6 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Avatar } from 'primeng/avatar';
 import { Badge } from 'primeng/badge';
 import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -28,19 +27,20 @@ export interface TeacherCardData {
 }
 
 /**
- * Tarjeta de profe (p-card + p-avatar + p-badge + pButton). Se itera en listados y su botón lleva al perfil público.
+ * Tarjeta de profe (p-card + foto + p-badge + pButton). Se itera en listados y su botón lleva al perfil público.
  * Con `removable` muestra "Quitar de favoritos" (la lista de favoritos del estudiante).
  */
 @Component({
   selector: 'app-teacher-card',
-  imports: [RouterLink, Card, Avatar, Badge, ButtonDirective],
+  imports: [RouterLink, Card, Badge, ButtonDirective],
   template: `
     <p-card class="h-full border border-tz-surface-border">
-      <div class="flex h-28 items-center justify-center rounded-xl bg-tz-soft">
+      <!-- La foto llena todo el recuadro; sin foto, las iniciales sobre el degradado de marca -->
+      <div class="aspect-[4/3] overflow-hidden rounded-xl bg-tz-soft">
         @if (teacher().avatar_url; as image) {
-          <p-avatar [image]="image" shape="circle" size="xlarge" />
+          <img [src]="image" [alt]="'Foto de ' + teacher().name" class="size-full object-cover" loading="lazy" />
         } @else {
-          <p-avatar [label]="initials()" shape="circle" size="xlarge" class="tz-bg-gradient font-display text-xl text-white" />
+          <div class="tz-bg-gradient flex size-full items-center justify-center font-display text-4xl text-white" aria-hidden="true">{{ initials() }}</div>
         }
       </div>
 

@@ -1,7 +1,6 @@
 import { Component, OnInit, PLATFORM_ID, computed, inject, input, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { Avatar } from 'primeng/avatar';
 import { Badge } from 'primeng/badge';
 import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
@@ -24,7 +23,7 @@ const UPCOMING_LIMIT = 48;
  */
 @Component({
   selector: 'app-teacher-page',
-  imports: [RouterLink, Avatar, Badge, ButtonDirective, Card, Message, Skeleton, Tag, CatalogCard],
+  imports: [RouterLink, Badge, ButtonDirective, Card, Message, Skeleton, Tag, CatalogCard],
   template: `
     <section class="tz-container py-8">
       <a pButton routerLink="/profes" label="Todos los profes" icon="pi pi-arrow-left" severity="secondary" [text]="true" class="mb-4"></a>
@@ -40,9 +39,9 @@ const UPCOMING_LIMIT = 48;
         <p-card class="border border-tz-surface-border">
           <div class="flex flex-wrap items-start gap-5">
             @if (current.teacher.avatar_url; as image) {
-              <p-avatar [image]="image" shape="circle" size="xlarge" class="shrink-0" />
+              <img [src]="image" [alt]="'Foto de ' + current.teacher.name" class="size-28 shrink-0 rounded-2xl object-cover sm:size-36" />
             } @else {
-              <p-avatar [label]="initials()" shape="circle" size="xlarge" class="tz-bg-gradient shrink-0 font-display text-xl text-white" />
+              <div class="tz-bg-gradient flex size-28 shrink-0 items-center justify-center rounded-2xl font-display text-3xl text-white sm:size-36" aria-hidden="true">{{ initials() }}</div>
             }
 
             <div class="min-w-0 flex-1 basis-64">

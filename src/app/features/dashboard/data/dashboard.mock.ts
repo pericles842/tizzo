@@ -1,5 +1,6 @@
 /**
- * Datos de PRUEBA del dashboard (solo frontend). Se reemplazarán por llamadas al API.
+ * Datos de PRUEBA del dashboard (solo frontend): hoy solo personas, certificados y comunidad. La próxima clase, los
+ * indicadores, la semana y las tareas ya salen de datos reales (dashboard.live.ts).
  * Hay una versión para estudiante y otra para profe; la semana se arma alrededor de la fecha de hoy.
  */
 import { UserRole } from '../../../core/auth/auth.models';
@@ -50,13 +51,7 @@ function studentMock(firstName: string): DashboardData {
       certificatesTitle: 'Certificados',
       peopleRoute: '/app/profesores'
     },
-    liveClass: {
-      courseTitle: 'Álgebra desde cero',
-      meta: 'Clase 3 de 8 · Prof. Andrea M. · Hoy, 6:00 PM',
-      status: 'En vivo · empieza en 25 min',
-      completedSessions: 3,
-      totalSessions: 8
-    },
+    liveClass: null,
     stats: [
       { icon: 'pi pi-video', value: 4, label: 'Clases esta semana' },
       { icon: 'pi pi-check-square', value: 2, label: 'Tareas pendientes' },
@@ -94,13 +89,7 @@ function teacherMock(firstName: string): DashboardData {
       certificatesTitle: 'Certificados emitidos',
       peopleRoute: '/app/estudiantes'
     },
-    liveClass: {
-      courseTitle: 'Álgebra desde cero',
-      meta: 'Clase 3 de 8 · 12 estudiantes · Hoy, 6:00 PM',
-      status: 'En vivo · empieza en 25 min',
-      completedSessions: 3,
-      totalSessions: 8
-    },
+    liveClass: null,
     stats: [
       { icon: 'pi pi-video', value: 6, label: 'Clases esta semana' },
       { icon: 'pi pi-check-square', value: 3, label: 'Tareas por revisar' },

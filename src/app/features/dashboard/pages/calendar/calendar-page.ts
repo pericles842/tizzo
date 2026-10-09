@@ -10,9 +10,9 @@ import listPlugin from '@fullcalendar/list';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
-import { Message } from 'primeng/message';
 import { SelectButton } from 'primeng/selectbutton';
 import { apiErrorMessage } from '../../../../core/http/api-error';
+import { ToastService } from '../../../../core/notify/toast.service';
 import { CalendarSession, CreatedCourse, TeachingKind, TeachingTemplate } from './calendar.models';
 import { nextFullHour, suggestedStart } from './calendar.utils';
 import { ScheduleDialog } from './components/schedule-dialog/schedule-dialog';
@@ -35,7 +35,7 @@ const VIEWS: { label: string; value: CalendarView }[] = [
  */
 @Component({
   selector: 'app-calendar-page',
-  imports: [FormsModule, FullCalendarModule, ButtonDirective, Card, Message, SelectButton, ScheduleDialog, SessionDialog, TemplatesCard],
+  imports: [FormsModule, FullCalendarModule, ButtonDirective, Card, SelectButton, ScheduleDialog, SessionDialog, TemplatesCard],
   encapsulation: ViewEncapsulation.None,
   styleUrl: './calendar-page.css',
   template: `
@@ -47,12 +47,6 @@ const VIEWS: { label: string; value: CalendarView }[] = [
       <button pButton type="button" label="Nueva clase o curso" icon="pi pi-plus" severity="warn" (click)="openSchedule(null)"></button>
     </header>
 
-    @if (notice(); as message) {
-      <p-message severity="success" styleClass="mb-4" role="status">{{ message }}</p-message>
-    }
-    @if (error(); as message) {
-      <p-message severity="error" styleClass="mb-4" role="alert">{{ message }}</p-message>
-    }
 
     <div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <p-card class="border border-tz-surface-border">
@@ -101,6 +95,7 @@ const VIEWS: { label: string; value: CalendarView }[] = [
 })
 export class CalendarPage implements OnInit {
   private readonly service = inject(TeachingService);
+  private readonly toast = inject(ToastService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly calendar = viewChild(FullCalendarComponent);
   private readonly destroyRef = inject(DestroyRef);
@@ -109,8 +104,6 @@ export class CalendarPage implements OnInit {
   protected readonly view = signal<CalendarView>('dayGridMonth');
   protected readonly title = signal('');
   protected readonly templates = signal<TeachingTemplate[]>([]);
-  protected readonly notice = signal<string | null>(null);
-  protected readonly error = signal<string | null>(null);
 
   protected readonly scheduleOpen = signal(false);
   protected readonly scheduleStart = signal(nextFullHour());
@@ -161,7 +154,7 @@ export class CalendarPage implements OnInit {
           .sessions(info.start, info.end)
           .then((sessions) => success(sessions.map((session) => this.toEvent(session))))
           .catch((err) => {
-            this.error.set(apiErrorMessage(err));
+            this.toast.error(apiErrorMessage(err));
             failure(err);
           });
       },
@@ -174,10 +167,9 @@ export class CalendarPage implements OnInit {
       eventClick: (arg) => this.onEventClick(arg),
       eventDrop: (arg) => {
         const session = arg.event.extendedProps['session'] as CalendarSession;
-        this.error.set(null);
         this.service.moveSession(session.uuid, arg.event.start as Date).catch((err) => {
           arg.revert();
-          this.error.set(apiErrorMessage(err));
+          this.toast.error(apiErrorMessage(err));
         });
       }
     };
@@ -218,18 +210,15 @@ export class CalendarPage implements OnInit {
   // ---------- Programar ----------
 
   private onDateClick(arg: DateClickArg): void {
-    this.notice.set(null);
     const start = suggestedStart(arg.date, !arg.allDay);
     if (!start) {
-      this.error.set('Elige un día y una hora que todavía no hayan pasado.');
+      this.toast.error('Elige un día y una hora que todavía no hayan pasado.');
       return;
     }
-    this.error.set(null);
     this.openSchedule(null, start);
   }
 
   protected openSchedule(template: TeachingTemplate | null, start: Date = nextFullHour()): void {
-    this.notice.set(null);
     this.scheduleStart.set(start);
     this.scheduleTemplate.set(template);
     this.scheduleOpen.set(true);
@@ -237,13 +226,13 @@ export class CalendarPage implements OnInit {
 
   protected onCreated(created: CreatedCourse & { kind: TeachingKind }): void {
     const what = created.kind === 'course' ? 'El curso' : 'La clase';
-    this.notice.set(
+    this.toast.success(
       created.status === 'draft'
         ? `${what} quedó programada. Se publicará cuando el equipo de Tizzo apruebe tu perfil.`
         : `${what} quedó programada y publicada.`
     );
     // Lo creado queda; solo se avisa si la miniatura no se pudo subir
-    this.error.set(created.coverFailed ? `${what} se programó, pero no se pudo subir la miniatura. Puedes intentarlo de nuevo más adelante.` : null);
+    if (created.coverFailed) this.toast.error(`${what} se programó, pero no se pudo subir la miniatura. Puedes intentarlo de nuevo más adelante.`);
     this.calendar()?.getApi().refetchEvents();
   }
 
@@ -259,7 +248,7 @@ export class CalendarPage implements OnInit {
   }
 
   protected onCancelled(): void {
-    this.notice.set('La clase se canceló.');
+    this.toast.success('La clase se canceló.');
     this.calendar()?.getApi().refetchEvents();
   }
 
@@ -269,7 +258,7 @@ export class CalendarPage implements OnInit {
     try {
       this.templates.set(await this.service.templates());
     } catch (err) {
-      this.error.set(apiErrorMessage(err));
+      this.toast.error(apiErrorMessage(err));
     }
   }
 
@@ -278,7 +267,7 @@ export class CalendarPage implements OnInit {
       await this.service.deleteTemplate(template.uuid);
       this.templates.update((list) => list.filter((item) => item.uuid !== template.uuid));
     } catch (err) {
-      this.error.set(apiErrorMessage(err));
+      this.toast.error(apiErrorMessage(err));
     }
   }
 }

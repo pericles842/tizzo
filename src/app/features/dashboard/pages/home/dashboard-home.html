@@ -1,16 +1,31 @@
 @let d = data();
+@let teacher = role() === 'teacher';
 
 <header>
   <p class="font-display text-3xl font-semibold text-tz-title">{{ d.copy.greeting }}</p>
-  <p class="mt-1 text-sm">{{ d.copy.summary }}</p>
+  <p class="mt-1 min-h-5 text-sm">{{ loading() ? "" : d.copy.summary }}</p>
 </header>
 
 <!-- Fila 1: próxima clase en vivo + indicadores -->
 <div class="mt-6 grid gap-5 xl:grid-cols-3">
   <div class="xl:col-span-2">
-    <app-live-class-card [liveClass]="d.liveClass" />
+    @if (loading()) {
+      <p-skeleton height="15rem" borderRadius="1.25rem" />
+    } @else if (d.liveClass; as liveClass) {
+      <app-live-class-card [liveClass]="liveClass" />
+    } @else {
+      <section class="tz-bg-gradient flex h-full flex-col items-start justify-center rounded-[1.25rem] p-6 text-white sm:p-7" aria-labelledby="sin-clases">
+        <h2 id="sin-clases" class="text-2xl font-semibold text-white sm:text-3xl">No tienes clases próximas</h2>
+        <p class="mt-2 text-sm text-white/85">{{ teacher ? 'Programa una clase o un curso desde tu calendario.' : 'Busca una clase y reserva tu lugar.' }}</p>
+        @if (teacher) {
+          <a pButton routerLink="/app/calendario" label="Ir al calendario" icon="pi pi-calendar" severity="warn" class="mt-5"></a>
+        } @else {
+          <a pButton routerLink="/clases" label="Buscar clase" icon="pi pi-search" severity="warn" class="mt-5"></a>
+        }
+      </section>
+    }
   </div>
-  <ul class="grid gap-5 sm:grid-cols-3 xl:grid-cols-1" aria-label="Resumen">
+  <ul class="grid gap-5 sm:grid-cols-2 xl:grid-cols-1" aria-label="Resumen">
     @for (stat of d.stats; track stat.label) {
       <li><app-stat-card [stat]="stat" /></li>
     }
@@ -22,7 +37,7 @@
   <div class="min-w-0 xl:col-span-2">
     <app-week-calendar [week]="d.week" />
   </div>
-  <app-task-list [heading]="d.copy.tasksTitle" [tasks]="d.tasks" />
+  <app-task-list [heading]="d.copy.tasksTitle" [tasks]="d.tasks" [emptyText]="teacher ? 'Nada por revisar por ahora.' : 'No tienes tareas por entregar.'" />
 </div>
 
 <!-- Fila 3: personas, certificados y comunidad -->

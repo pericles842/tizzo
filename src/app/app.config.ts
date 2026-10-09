@@ -10,6 +10,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { providePrimeNG } from 'primeng/config';
+import { MessageService } from 'primeng/api';
 
 import { routes } from './app.routes';
 import { TizzoPreset } from './tizzo.preset';
@@ -28,6 +29,7 @@ export const appConfig: ApplicationConfig = {
     // En el navegador pregunta quién está conectado antes del primer render (en el servidor no hace nada)
     provideAppInitializer(() => inject(AuthService).ensureSession()),
     provideAnimationsAsync(),
+    MessageService,
     providePrimeNG({
       ripple: false,
       translation: PRIMENG_ES,

@@ -1,12 +1,16 @@
 /** Tipos del dashboard. Hoy se llenan con datos de prueba (dashboard.mock.ts); mañana vendrán del API. */
 
 export interface LiveClass {
+  courseUuid: string;
   courseTitle: string;
-  /** Ej.: "Clase 3 de 8 · Prof. Andrea M. · Hoy, 6:00 PM" */
+  /** Ej.: "Clase 3 de 8 · Prof. Andrea M. · Hoy, 6:00 p. m." */
   meta: string;
-  /** Ej.: "En vivo · empieza en 25 min" */
+  /** Ej.: "En vivo · en curso", "Empieza en 25 min" */
   status: string;
+  /** Solo por las fechas: en curso (live), sala abierta (open) o todavía no (upcoming) */
+  phase: 'upcoming' | 'open' | 'live';
   completedSessions: number;
+  /** 0 = clase suelta: sin barra de progreso */
   totalSessions: number;
 }
 
@@ -39,6 +43,8 @@ export interface TaskItem {
   due: string;
   /** Vence pronto: se resalta con el acento */
   urgent: boolean;
+  /** Pantalla de la tarea */
+  link?: string;
 }
 
 export interface PersonItem {
@@ -78,7 +84,8 @@ export interface DashboardCopy {
 
 export interface DashboardData {
   copy: DashboardCopy;
-  liveClass: LiveClass;
+  /** null = no queda ninguna clase por dar o tomar */
+  liveClass: LiveClass | null;
   stats: StatItem[];
   week: WeekDay[];
   tasks: TaskItem[];

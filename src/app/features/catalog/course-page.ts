@@ -6,6 +6,7 @@ import { Message } from 'primeng/message';
 import { Skeleton } from 'primeng/skeleton';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/http/api-error';
+import { ToastService } from '../../core/notify/toast.service';
 import { CourseDetailView } from '../../shared/course-detail/course-detail-view';
 import { CatalogDetail, CatalogService } from './catalog.service';
 
@@ -20,9 +21,6 @@ import { CatalogDetail, CatalogService } from './catalog.service';
     <section class="tz-container py-8">
       <a pButton routerLink="/clases" label="Todas las clases" icon="pi pi-arrow-left" severity="secondary" [text]="true" class="mb-4"></a>
 
-      @if (notice(); as message) {
-        <p-message severity="success" styleClass="mb-4" role="status">{{ message }}</p-message>
-      }
       @if (error(); as message) {
         <p-message severity="error" styleClass="mb-4" role="alert">{{ message }}</p-message>
       }
@@ -45,6 +43,7 @@ import { CatalogDetail, CatalogService } from './catalog.service';
 export class CoursePage implements OnInit {
   private readonly service = inject(CatalogService);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -54,7 +53,6 @@ export class CoursePage implements OnInit {
   protected readonly data = signal<CatalogDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly reserving = signal(false);
-  protected readonly notice = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
 
   /** "Ver perfil" del profe: su página pública con todo lo que va a dar */
@@ -95,10 +93,9 @@ export class CoursePage implements OnInit {
     }
 
     this.reserving.set(true);
-    this.error.set(null);
     try {
       const result = await this.service.book(current.course.uuid);
-      this.notice.set(
+      this.toast.success(
         result.email_sent
           ? '¡Listo! Ya estás inscrito. Te enviamos el enlace de la sala por correo y la clase aparece en tu calendario.'
           : '¡Listo! Ya estás inscrito y la clase aparece en tu calendario. No pudimos enviarte el correo con el enlace; entra a la sala desde tu calendario.'
@@ -106,7 +103,7 @@ export class CoursePage implements OnInit {
       // Recarga para ver los cupos y el estado "inscrito" actualizados
       this.data.set(await this.service.detail(this.slug()));
     } catch (err) {
-      this.error.set(apiErrorMessage(err));
+      this.toast.error(apiErrorMessage(err));
     } finally {
       this.reserving.set(false);
     }

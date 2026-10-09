@@ -30,6 +30,12 @@ export const routes: Routes = [
         title: 'Profes · Tizzo',
         loadComponent: () => import('./features/teachers/teachers-page').then((m) => m.TeachersPage)
       },
+      // El representante de un menor confirma desde el enlace del correo (sin cuenta)
+      {
+        path: 'representante/:token',
+        title: 'Autorización del representante · Tizzo',
+        loadComponent: () => import('./features/guardian/guardian-page').then((m) => m.GuardianPage)
+      },
       {
         path: 'profes/:uuid',
         title: 'Profe · Tizzo',

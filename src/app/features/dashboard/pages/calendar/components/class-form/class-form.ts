@@ -1,3 +1,4 @@
+import { Audience } from '../../../../../../core/auth/age';
 import { Component, ElementRef, OnInit, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
@@ -91,6 +92,7 @@ export class ClassForm implements OnInit {
     description: ['', DESCRIPTION_VALIDATORS],
     price: this.fb.control<number | null>(null, PRICE_VALIDATORS),
     max_students: this.fb.control<number | null>(null, STUDENTS_VALIDATORS),
+    audience: this.fb.control<Audience>('all'),
     learning_points: this.fb.control<string[]>([]),
     starts_at: this.fb.control<Date | null>(null, Validators.required),
     ends_at: this.fb.control<Date | null>(null, [Validators.required, endAfterStart]),
@@ -123,6 +125,7 @@ export class ClassForm implements OnInit {
       description: template.description,
       price: template.price,
       max_students: template.max_students,
+      audience: template.audience ?? 'all',
       gives_certificate: template.gives_certificate,
       learning_points: [...template.learning_points]
     });
@@ -145,6 +148,7 @@ export class ClassForm implements OnInit {
         description: value.description.trim(),
         price: value.price as number,
         max_students: value.max_students as number,
+        audience: value.audience,
         starts_at: (value.starts_at as Date).toISOString(),
         ends_at: (value.ends_at as Date).toISOString(),
         gives_certificate: value.gives_certificate,
@@ -177,6 +181,7 @@ export class ClassForm implements OnInit {
         description: description.value.trim(),
         price: price.valid ? price.value : null,
         max_students: max_students.valid ? max_students.value : null,
+        audience: this.form.controls.audience.value,
         duration_min: rangeValid ? minutesBetween(starts_at.value as Date, ends_at.value as Date) : null,
         gives_certificate: gives_certificate.value,
         learning_points: learning_points.value
@@ -197,6 +202,7 @@ export class ClassForm implements OnInit {
       description: c.description,
       price: c.price,
       max_students: c.max_students,
+      audience: c.audience,
       learning_points: c.learning_points,
       starts_at: c.starts_at,
       ends_at: c.ends_at

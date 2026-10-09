@@ -15,6 +15,7 @@ export interface CatalogItem {
   currency: string;
   modality: 'group' | 'individual';
   max_students: number;
+  audience: 'all' | 'adults' | 'minors';
   total_sessions: number;
   gives_certificate: boolean;
   next_starts_at: string | null;
@@ -64,7 +65,8 @@ export interface CatalogPage {
 /** Detalle público (GET /catalog/:slug): la pantalla de detalle y qué puede hacer quien la ve */
 export interface CatalogDetail {
   course: CourseDetail & { slug: string };
-  viewer: { enrolled: boolean; is_teacher: boolean };
+  /** blocked_reason: por qué este estudiante no puede reservar (su edad o falta su representante) */
+  viewer: { enrolled: boolean; is_teacher: boolean; blocked_reason: string | null };
 }
 
 export interface BookingResult {

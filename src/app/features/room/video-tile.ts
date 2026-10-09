@@ -1,4 +1,5 @@
 import { Component, ElementRef, computed, effect, input, output, viewChild } from '@angular/core';
+import { Tooltip } from 'primeng/tooltip';
 import { Avatar } from 'primeng/avatar';
 import { ButtonDirective } from 'primeng/button';
 import { Tag } from 'primeng/tag';
@@ -6,6 +7,8 @@ import { Tag } from 'primeng/tag';
 /** Lo que la sala sabe de cada persona conectada (sale de los participantes de Daily) */
 export interface ParticipantView {
   id: string;
+  /** uuid de Tizzo (el user_id del token de Daily) */
+  userId: string | null;
   name: string;
   isLocal: boolean;
   /** Profe (dueño de la sala) */
@@ -19,12 +22,12 @@ export interface ParticipantView {
 
 /**
  * Recuadro de una persona en la sala: su video (o sus iniciales si tiene la cámara apagada), nombre, si tiene el
- * micrófono apagado y, para el profe, el botón de silenciar. También reproduce su audio (salvo el propio).
+ * micrófono apagado y, para el profe, los botones de silenciar y expulsar. También reproduce su audio (salvo el propio).
  * Con `screen` muestra la pantalla que comparte en vez de la cámara.
  */
 @Component({
   selector: 'app-video-tile',
-  imports: [Avatar, ButtonDirective, Tag],
+  imports: [Avatar, ButtonDirective, Tag, Tooltip],
   template: `
     <div class="relative flex size-full items-center justify-center overflow-hidden rounded-2xl bg-tz-stage text-tz-on-stage">
       <video
@@ -69,6 +72,22 @@ export interface ParticipantView {
             (click)="mute.emit(participant().id)"
           ></button>
         }
+        @if (canMute() && !participant().isLocal && !participant().isOwner && participant().userId && !screen()) {
+          <button
+            pButton
+            type="button"
+            icon="pi pi-ban"
+            size="small"
+            severity="danger"
+            [outlined]="true"
+            [rounded]="true"
+            class="shrink-0 bg-black/40"
+            pTooltip="Expulsar de la clase"
+            tooltipPosition="top"
+            [attr.aria-label]="'Expulsar a ' + participant().name + ' de la clase'"
+            (click)="eject.emit(participant())"
+          ></button>
+        }
       </div>
     </div>
   `,
@@ -81,6 +100,8 @@ export class VideoTile {
   /** El profe puede silenciar a los demás */
   readonly canMute = input(false);
   readonly mute = output<string>();
+  /** El profe saca a esta persona de la clase */
+  readonly eject = output<ParticipantView>();
 
   private readonly video = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly audio = viewChild<ElementRef<HTMLAudioElement>>('audio');

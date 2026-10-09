@@ -28,6 +28,12 @@ export interface User {
   phone: string | null;
   country_code: string | null;
   age: number | null;
+  /** 'YYYY-MM-DD'; null en cuentas viejas (solo tienen la edad) */
+  birth_date: string | null;
+  /** Menor de 18 (por su fecha de nacimiento) */
+  is_minor: boolean;
+  /** Menor: el correo de su representante y si ya confirmó (sin eso no reserva ni entra a las salas) */
+  guardian: { email: string | null; confirmed: boolean } | null;
   timezone: string;
   /** Estudiante: temas que quiere aprender. Profe: temas que quiere enseñar. */
   topics: Topic[];
@@ -49,7 +55,10 @@ export interface RegisterPayload {
   email: string;
   password: string;
   country_code: string;
-  age: number;
+  /** 'YYYY-MM-DD' */
+  birth_date: string;
+  /** Obligatorio si es menor de 18 */
+  guardian_email?: string;
   topic_ids: number[];
   timezone?: string;
 }
@@ -60,7 +69,8 @@ export interface StudentProfilePayload {
   last_name: string;
   phone: string | null;
   country_code: string;
-  age: number;
+  /** Solo si todavía no la tiene (se pone una sola vez) */
+  birth_date?: string;
   timezone: string;
   topic_ids: number[];
 }

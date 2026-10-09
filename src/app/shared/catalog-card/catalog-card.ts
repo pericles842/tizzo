@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonDirective } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Tag } from 'primeng/tag';
+import { AUDIENCE_TAG } from '../../core/auth/age';
 import type { CatalogItem } from '../../features/catalog/catalog.service';
 import { CourseCover } from '../course-cover/course-cover';
 import { money } from '../course-detail/course-detail.utils';
@@ -21,6 +22,9 @@ import { money } from '../course-detail/course-detail.utils';
         <p-tag [value]="item().kind === 'course' ? 'Curso · ' + item().total_sessions + ' clases' : 'Clase suelta'" [severity]="item().kind === 'course' ? 'info' : 'warn'" />
         @if (item().gives_certificate) {
           <p-tag value="Con diploma" severity="secondary" />
+        }
+        @if (audienceTag[item().audience]; as label) {
+          <p-tag [value]="label" icon="pi pi-shield" severity="secondary" />
         }
       </div>
       <h3 class="mt-2 line-clamp-2 text-lg font-semibold leading-snug">{{ item().title }}</h3>
@@ -48,6 +52,7 @@ import { money } from '../course-detail/course-detail.utils';
   host: { class: 'block' }
 })
 export class CatalogCard {
+  protected readonly audienceTag = AUDIENCE_TAG;
   readonly item = input.required<CatalogItem>();
 
   protected readonly price = computed(() => `${money(this.item().price, this.item().currency)}${this.item().kind === 'course' ? ' el curso' : ''}`);

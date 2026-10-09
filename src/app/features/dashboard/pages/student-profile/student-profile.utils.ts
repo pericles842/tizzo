@@ -32,7 +32,7 @@ export function timezoneOptions(current: string): { value: string; label: string
 }
 
 /**
- * Qué tan completo está el perfil del estudiante. Cuentan 5 datos: foto de perfil, teléfono, país, edad y los temas
+ * Qué tan completo está el perfil del estudiante. Cuentan 5 datos: foto de perfil, teléfono, país, fecha de nacimiento y los temas
  * que quiere aprender. El nombre y el correo siempre existen, por eso no suman.
  */
 export function studentCompletion(user: User | null): ProfileCompletion {
@@ -40,7 +40,7 @@ export function studentCompletion(user: User | null): ProfileCompletion {
     { key: 'photo', label: 'Foto de perfil', done: !!user?.avatar_url },
     { key: 'phone', label: 'Teléfono', done: !!user?.phone?.trim() },
     { key: 'country', label: 'País', done: !!user?.country_code },
-    { key: 'age', label: 'Edad', done: !!user?.age },
+    { key: 'age', label: 'Fecha de nacimiento', done: !!user?.birth_date },
     { key: 'topics', label: 'Temas que quieres aprender', done: (user?.topics.length ?? 0) > 0 }
   ];
   const done = items.filter((item) => item.done).length;

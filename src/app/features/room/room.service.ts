@@ -26,6 +26,8 @@ export interface RoomStatus {
   open_session: RoomSession | null;
   next_session: RoomSession | null;
   join_early_min: number;
+  /** El profe sacó a este estudiante de la clase abierta: no puede volver a entrar a esa clase */
+  ejected: boolean;
 }
 
 /** POST /rooms/:courseUuid/join: sala de Daily y token solo para la clase abierta */
@@ -50,5 +52,10 @@ export class RoomService {
 
   join(courseUuid: string): Promise<RoomJoin> {
     return firstValueFrom(this.http.post<RoomJoin>(`${this.api}/${courseUuid}/join`, {}));
+  }
+
+  /** El profe saca a un estudiante de la clase abierta (queda registrado: no vuelve a entrar a esa clase) */
+  async eject(courseUuid: string, studentUuid: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.api}/${courseUuid}/eject`, { student_uuid: studentUuid }));
   }
 }

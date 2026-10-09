@@ -1,6 +1,8 @@
 import { Component, input, model } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputNumber } from 'primeng/inputnumber';
+import { SelectButton } from 'primeng/selectbutton';
+import { AUDIENCE_OPTIONS } from '../../../../../../core/auth/age';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { CoverPicker } from '../../../../../../shared/cover-picker/cover-picker';
@@ -15,12 +17,12 @@ export const STUDENTS_VALIDATORS = [Validators.required, Validators.min(1), Vali
 
 /**
  * Campos comunes de una clase suelta y de un curso: título, descripción general, precio en USD, máximo de integrantes
- * (de la clase o del curso completo), miniatura opcional y "qué aprenderás". El formulario padre debe tener los controles `title`,
- * `description`, `price`, `max_students` y `learning_points`.
+ * (de la clase o del curso completo), para quién es (todos, adultos o menores), miniatura opcional y "qué aprenderás". El
+ * formulario padre debe tener los controles `title`, `description`, `price`, `max_students`, `audience` y `learning_points`.
  */
 @Component({
   selector: 'app-offer-fields',
-  imports: [ReactiveFormsModule, InputText, InputNumber, Textarea, FieldError, PointsInput, CoverPicker],
+  imports: [ReactiveFormsModule, InputText, InputNumber, SelectButton, Textarea, FieldError, PointsInput, CoverPicker],
   template: `
     <div class="space-y-5" [formGroup]="form()">
       <div>
@@ -82,6 +84,21 @@ export const STUDENTS_VALIDATORS = [Validators.required, Validators.min(1), Vali
       </div>
       </div>
 
+      <div>
+        <p [id]="prefix() + '-audience-label'" class="tz-label">¿Para quién es?</p>
+        <p-selectbutton
+          formControlName="audience"
+          [options]="audiences"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [attr.aria-labelledby]="prefix() + '-audience-label'"
+          class="flex-wrap"
+        />
+        <p class="tz-hint">{{ audienceHint() }}</p>
+        <app-field-error [errorId]="prefix() + '-audience-error'" [control]="form().controls['audience']" />
+      </div>
+
       <app-points-input
         [inputId]="prefix() + '-points'"
         [points]="form().controls['learning_points'].value"
@@ -104,6 +121,13 @@ export class OfferFields {
   readonly isCourse = input(false);
   /** Miniatura elegida, pendiente de subir (la sube el formulario cuando se crea la clase o el curso) */
   readonly cover = model<File | null>(null);
+
+  protected readonly audiences = AUDIENCE_OPTIONS;
+
+  protected audienceHint(): string {
+    const value = this.form().controls['audience'].value;
+    return AUDIENCE_OPTIONS.find((option) => option.value === value)?.hint ?? '';
+  }
 
   protected setPoints(points: string[]): void {
     const control = this.form().controls['learning_points'];

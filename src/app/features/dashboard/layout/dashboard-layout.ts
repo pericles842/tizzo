@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet, RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
 import { Drawer } from 'primeng/drawer';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -14,7 +14,7 @@ import { DashboardSidebar } from './dashboard-sidebar/dashboard-sidebar';
  */
 @Component({
   selector: 'app-dashboard-layout',
-  imports: [RouterOutlet, Drawer, DashboardHeader, DashboardSidebar],
+  imports: [RouterLink, RouterOutlet, Drawer, DashboardHeader, DashboardSidebar],
   templateUrl: './dashboard-layout.html',
   host: { class: 'block min-h-dvh bg-tz-canvas' }
 })

@@ -1,11 +1,12 @@
 import { isPlatformBrowser } from '@angular/common';
+import { ADULT_AGE, MAX_AGE, MIN_AGE, ageFrom, toIsoDate } from '../../core/auth/age';
 import { ChangeDetectorRef, Component, ElementRef, Injector, OnInit, PLATFORM_ID, afterNextRender, computed, inject, input, signal, viewChild } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { DatePicker } from 'primeng/datepicker';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { InputNumber } from 'primeng/inputnumber';
 import { Password } from 'primeng/password';
 import { Select } from 'primeng/select';
 import { Message } from 'primeng/message';
@@ -81,6 +82,17 @@ const DEFAULT_TIMEZONE = 'America/Caracas';
  * Registro en 4 pasos (diseño de Figma): datos personales -> contraseña -> objetivo -> intereses.
  * La cuenta se crea al final en una sola petición. El layout es AuthShell (parte 1 + parte 2).
  */
+/** Fecha de nacimiento: no futura y con una edad de ${MIN_AGE} a ${MAX_AGE} años (igual que el API) */
+function birthDateValidator(control: AbstractControl<Date | null>): ValidationErrors | null {
+  const value = control.value;
+  if (!value) return null;
+  if (value.getTime() > Date.now()) return { server: 'La fecha de nacimiento no puede ser futura.' };
+  const age = ageFrom(value);
+  if (age < MIN_AGE) return { server: `Debes tener al menos ${MIN_AGE} años.` };
+  if (age > MAX_AGE) return { server: 'Revisa el año de nacimiento.' };
+  return null;
+}
+
 @Component({
   selector: 'app-register',
   imports: [
@@ -88,7 +100,7 @@ const DEFAULT_TIMEZONE = 'America/Caracas';
     RouterLink,
     ButtonDirective,
     InputText,
-    InputNumber,
+    DatePicker,
     Password,
     Select,
     Message,
@@ -132,8 +144,36 @@ export class Register implements OnInit {
     last_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
     country_code: this.fb.control<string | null>(null, Validators.required),
-    age: this.fb.control<number | null>(null, [Validators.required, Validators.min(10), Validators.max(100)])
+    birth_date: this.fb.control<Date | null>(null, [Validators.required, birthDateValidator]),
+    // Solo para menores de 18: el validador se activa al elegir la fecha (ver syncGuardian)
+    guardian_email: ['', [Validators.maxLength(150)]]
   });
+
+  /** Menor de 18 según la fecha elegida: pide el correo del representante */
+  protected readonly isMinor = signal(false);
+  protected readonly adultAge = ADULT_AGE;
+  protected readonly today = new Date();
+
+  /** Al elegir la fecha: si es menor de edad, el correo del representante pasa a ser obligatorio */
+  private readonly syncGuardianOnBirth = this.personalForm.controls.birth_date.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.syncGuardian());
+
+  private syncGuardian(): void {
+    const birth = this.personalForm.controls.birth_date.value;
+    const minor = !!birth && ageFrom(birth) >= MIN_AGE && ageFrom(birth) < ADULT_AGE;
+    if (minor === this.isMinor()) return;
+    this.isMinor.set(minor);
+    // Un menor solo puede registrarse para aprender
+    if (minor) this.role.set('student');
+    const control = this.personalForm.controls.guardian_email;
+    control.setValidators(minor ? [Validators.required, Validators.email, Validators.maxLength(150), this.notOwnEmail] : [Validators.maxLength(150)]);
+    control.updateValueAndValidity();
+  }
+
+  /** El correo del representante no puede ser el del propio menor */
+  private readonly notOwnEmail = (control: AbstractControl<string>): ValidationErrors | null => {
+    const own = this.personalForm?.controls.email.value.trim().toLowerCase();
+    return own && control.value.trim().toLowerCase() === own ? { server: 'Debe ser el correo de tu representante, no el tuyo.' } : null;
+  };
 
   protected readonly passwordForm = this.fb.group(
     {
@@ -238,7 +278,8 @@ export class Register implements OnInit {
       email: personal.email.trim(),
       password: this.passwordForm.controls.password.value,
       country_code: personal.country_code!,
-      age: personal.age!,
+      birth_date: toIsoDate(personal.birth_date!),
+      ...(this.isMinor() ? { guardian_email: personal.guardian_email.trim().toLowerCase() } : {}),
       topic_ids: this.selectedTopics(),
       timezone: this.timezone
     };
@@ -265,7 +306,7 @@ export class Register implements OnInit {
   private handleRegisterError(err: unknown): void {
     const fields = apiFieldErrors(err);
     const keys = Object.keys(fields);
-    const personalKeys = ['first_name', 'last_name', 'email', 'country_code', 'age'];
+    const personalKeys = ['first_name', 'last_name', 'email', 'country_code', 'birth_date', 'guardian_email'];
     const target: StepId | null = keys.some((key) => personalKeys.includes(key))
       ? 'personal'
       : keys.includes('password')
@@ -289,7 +330,8 @@ export class Register implements OnInit {
           last_name: personal.last_name,
           email: personal.email,
           country_code: personal.country_code,
-          age: personal.age,
+          birth_date: personal.birth_date,
+          guardian_email: personal.guardian_email,
           password: this.passwordForm.controls.password
         });
         // El error queda en el control (no es un signal): hay que avisar a la vista (zoneless)

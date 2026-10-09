@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { Badge } from 'primeng/badge';
 import { Tag } from 'primeng/tag';
+import { AUDIENCE_TAG } from '../../core/auth/age';
 import { CourseCover } from '../course-cover/course-cover';
 import { CourseDetail } from './course-detail.models';
 import { nextClassLabel, nextSession, typicalDuration } from './course-detail.utils';
@@ -18,6 +19,9 @@ import { nextClassLabel, nextSession, typicalDuration } from './course-detail.ut
     }
     <div class="flex flex-wrap items-center gap-2">
       <p-tag [value]="course().category ?? kindLabel()" severity="secondary" />
+      @if (audienceTag[course().audience]; as label) {
+        <p-tag [value]="label" icon="pi pi-shield" severity="warn" />
+      }
       @if (next(); as label) {
         <p-badge [value]="'PRÓXIMA CLASE ' + label" severity="danger" />
       }
@@ -37,6 +41,7 @@ import { nextClassLabel, nextSession, typicalDuration } from './course-detail.ut
   host: { class: 'block' }
 })
 export class CourseHero {
+  protected readonly audienceTag = AUDIENCE_TAG;
   readonly course = input.required<CourseDetail>();
   /** Momento de referencia para "próxima clase" (se puede fijar en pruebas) */
   readonly now = input<Date>(new Date());

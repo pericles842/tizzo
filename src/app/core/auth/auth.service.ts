@@ -23,6 +23,8 @@ export class AuthService {
   readonly status = signal<SessionStatus>('unknown');
   readonly isAuthenticated = computed(() => this.status() === 'authenticated');
   readonly isPendingTeacher = computed(() => this.user()?.teacher_profile?.approval_status === 'pending');
+  /** Menor de edad cuyo representante todavía no confirmó: no reserva ni entra a las salas */
+  readonly needsGuardian = computed(() => !!this.user()?.is_minor && !this.user()?.guardian?.confirmed);
 
   /** Pregunta al API por la sesión una sola vez. En el servidor no hace nada. */
   ensureSession(): Promise<void> {
@@ -76,6 +78,15 @@ export class AuthService {
     const { user } = await firstValueFrom(this.http.put<{ user: User }>(`${this.api}/student/profile`, data));
     this.setUser(user);
     return user;
+  }
+
+  /** Reenvía el correo al representante (o lo cambia si viene `guardianEmail`). Responde si el correo salió. */
+  async resendGuardian(guardianEmail?: string): Promise<boolean> {
+    const { user, guardian_email_sent } = await firstValueFrom(
+      this.http.post<{ user: User; guardian_email_sent: boolean }>(`${this.api}/student/guardian`, guardianEmail ? { guardian_email: guardianEmail } : {})
+    );
+    this.setUser(user);
+    return guardian_email_sent;
   }
 
   async addCredential(credential: CredentialPayload): Promise<void> {

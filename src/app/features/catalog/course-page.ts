@@ -65,7 +65,8 @@ export class CoursePage implements OnInit {
     const current = this.data();
     if (current?.viewer.is_teacher) return 'Eres el profe de esta clase.';
     if (this.auth.user()?.role === 'teacher') return 'Las reservas son para cuentas de estudiante.';
-    return null;
+    // Su edad no corresponde al público de la clase, o es menor y su representante no ha confirmado
+    return current?.viewer.blocked_reason ?? null;
   });
 
   ngOnInit(): void {

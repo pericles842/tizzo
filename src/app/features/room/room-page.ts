@@ -1,4 +1,7 @@
 import { Component, DestroyRef, OnInit, PLATFORM_ID, computed, inject, input, signal } from '@angular/core';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ToastService } from '../../core/notify/toast.service';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -15,7 +18,7 @@ import { ThemeToggle } from '../../shared/theme-toggle/theme-toggle';
 import { RoomJoin, RoomService, RoomSession, RoomStatus } from './room.service';
 import { ParticipantView, VideoTile } from './video-tile';
 
-type Stage = 'loading' | 'closed' | 'lobby' | 'joining' | 'in-call' | 'left' | 'ended' | 'error';
+type Stage = 'loading' | 'closed' | 'lobby' | 'joining' | 'in-call' | 'left' | 'ejected' | 'ended' | 'error';
 
 /** Cada cuánto se revisa si la sala abrió (pantalla de sala cerrada) */
 const STATUS_POLL_MS = 30_000;
@@ -25,6 +28,7 @@ function toView(participant: DailyParticipant): ParticipantView {
   const playable = (state: string | undefined) => state === 'playable' || state === 'loading' || state === 'sendable';
   return {
     id: participant.session_id,
+    userId: participant.user_id || null,
     name: participant.user_name || 'Invitado',
     isLocal: participant.local,
     isOwner: participant.owner,
@@ -47,7 +51,8 @@ function toView(participant: DailyParticipant): ParticipantView {
  */
 @Component({
   selector: 'app-room-page',
-  imports: [RouterLink, ButtonDirective, Card, Message, ProgressSpinner, Tooltip, Logo, ThemeToggle, VideoTile],
+  imports: [RouterLink, ButtonDirective, Card, Message, ProgressSpinner, Tooltip, Logo, ThemeToggle, VideoTile, ConfirmDialog],
+  providers: [ConfirmationService],
   template: `
     <div class="flex min-h-dvh flex-col bg-tz-canvas">
       <header class="flex h-16 shrink-0 items-center gap-3 border-b border-tz-line bg-tz-header px-4 backdrop-blur-md sm:px-6">
@@ -133,14 +138,14 @@ function toView(participant: DailyParticipant): ParticipantView {
                   <app-video-tile class="min-h-64" [participant]="presenter" [screen]="true" />
                   <div class="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-y-auto">
                     @for (person of participants(); track person.id) {
-                      <app-video-tile class="aspect-video w-48 shrink-0 lg:w-full" [participant]="person" [canMute]="isTeacher()" (mute)="mute($event)" />
+                      <app-video-tile class="aspect-video w-48 shrink-0 lg:w-full" [participant]="person" [canMute]="isTeacher()" (mute)="mute($event)" (eject)="askEject($event)" />
                     }
                   </div>
                 </div>
               } @else {
                 <div class="grid flex-1 auto-rows-fr gap-3" [style.grid-template-columns]="gridColumns()">
                   @for (person of participants(); track person.id) {
-                    <app-video-tile class="min-h-40" [participant]="person" [canMute]="isTeacher()" (mute)="mute($event)" />
+                    <app-video-tile class="min-h-40" [participant]="person" [canMute]="isTeacher()" (mute)="mute($event)" (eject)="askEject($event)" />
                   }
                 </div>
               }
@@ -181,6 +186,16 @@ function toView(participant: DailyParticipant): ParticipantView {
               </p-card>
             </div>
           }
+          @case ('ejected') {
+            <div class="flex flex-1 items-center justify-center p-4">
+              <p-card class="w-full max-w-md border border-tz-surface-border text-center">
+                <i class="pi pi-ban text-3xl text-tz-subtitle" aria-hidden="true"></i>
+                <h1 class="mt-3 text-xl font-semibold">El profe te sacó de esta clase</h1>
+                <p class="mt-2 text-sm">No puedes volver a entrar a esta clase. Podrás entrar a la siguiente con normalidad.</p>
+                <a pButton routerLink="/app/calendario" label="Ir a mi calendario" icon="pi pi-calendar" class="mt-5"></a>
+              </p-card>
+            </div>
+          }
           @case ('ended') {
             <div class="flex flex-1 items-center justify-center p-4">
               <p-card class="w-full max-w-md border border-tz-surface-border text-center">
@@ -194,12 +209,15 @@ function toView(participant: DailyParticipant): ParticipantView {
         }
       </main>
     </div>
+    <p-confirmdialog rejectButtonStyleClass="p-button-text p-button-secondary" />
   `
 })
 export class RoomPage implements OnInit {
   private readonly service = inject(RoomService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmation = inject(ConfirmationService);
+  private readonly toast = inject(ToastService);
 
   /** Viene de la ruta (withComponentInputBinding) */
   readonly courseUuid = input.required<string>();
@@ -268,7 +286,10 @@ export class RoomPage implements OnInit {
     try {
       const status = await this.service.status(this.courseUuid());
       this.status.set(status);
-      if (status.open_session) {
+      if (status.open_session && status.ejected) {
+        this.stopPolling();
+        this.stage.set('ejected');
+      } else if (status.open_session) {
         this.stopPolling();
         this.stage.set('lobby');
       } else {
@@ -337,12 +358,12 @@ export class RoomPage implements OnInit {
     call.on('participant-joined', sync).on('participant-updated', sync).on('participant-left', sync).on('track-started', sync).on('track-stopped', sync);
     call.on('camera-error', () => this.notice.set('No pudimos usar tu cámara o tu micrófono. Revisa los permisos del navegador.'));
     call.on('left-meeting', () => {
-      // Si nadie pulsó "Salir", la sala nos sacó (terminó la clase o venció el token)
-      if (this.stage() === 'in-call') this.stage.set(this.classOver() ? 'ended' : 'left');
+      // Si nadie pulsó "Salir", la sala nos sacó: terminó la clase, venció el token o el profe nos expulsó
+      if (this.stage() === 'in-call') void this.removedFromCall();
       void this.destroyCall();
     });
     call.on('error', () => {
-      this.stage.set(this.classOver() ? 'ended' : 'left');
+      if (this.stage() === 'in-call') void this.removedFromCall();
       void this.destroyCall();
     });
   }
@@ -360,6 +381,19 @@ export class RoomPage implements OnInit {
     this.localAudio.set(!!local?.audioOn);
     this.localVideo.set(!!local?.videoOn);
     this.localScreen.set(!!local?.screenTrack);
+  }
+
+/** Daily nos sacó: si fue el profe lo dice el API (queda registrado); si no, terminó la clase o salimos */
+  private async removedFromCall(): Promise<void> {
+    const fallback: Stage = this.classOver() ? 'ended' : 'left';
+    this.stage.set(fallback);
+    if (this.isTeacher()) return;
+    try {
+      const status = await this.service.status(this.courseUuid());
+      if (status.ejected) this.stage.set('ejected');
+    } catch {
+      // se queda en "saliste" o "terminó"
+    }
   }
 
   private classOver(): boolean {
@@ -402,6 +436,31 @@ export class RoomPage implements OnInit {
   /** Solo el profe (dueño de la sala): apaga el micrófono de otra persona */
   protected mute(sessionId: string): void {
     if (this.isTeacher()) this.call?.updateParticipant(sessionId, { setAudio: false });
+  }
+
+/** Solo el profe: saca a un estudiante de esta clase, con confirmación. No puede volver a entrar a esta clase. */
+  protected askEject(person: ParticipantView): void {
+    if (!this.isTeacher() || !person.userId) return;
+    this.confirmation.confirm({
+      header: 'Expulsar de la clase',
+      message: `¿Sacar a ${person.name} de esta clase? No podrá volver a entrar a esta clase; sí a las siguientes.`,
+      icon: 'pi pi-ban',
+      acceptLabel: 'Expulsar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => void this.eject(person)
+    });
+  }
+
+  private async eject(person: ParticipantView): Promise<void> {
+    try {
+      // Primero queda registrado (no podrá volver); luego sale de la llamada al instante
+      await this.service.eject(this.courseUuid(), person.userId!);
+      this.call?.updateParticipant(person.id, { eject: true });
+      this.toast.success(`${person.name} salió de la clase.`);
+    } catch (err) {
+      this.toast.error(apiErrorMessage(err));
+    }
   }
 
   // ---------- Formato ----------

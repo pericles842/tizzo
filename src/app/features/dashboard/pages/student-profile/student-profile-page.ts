@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { GuardianCard } from './components/guardian-card';
 import { PhotoCard } from '../profile/components/photo-card/photo-card';
 import { StudentProfileForm } from './components/student-profile-form';
 import { StudentProfileSummary } from './components/student-profile-summary';
@@ -9,7 +11,7 @@ import { StudentProfileSummary } from './components/student-profile-summary';
  */
 @Component({
   selector: 'app-student-profile-page',
-  imports: [PhotoCard, StudentProfileForm, StudentProfileSummary],
+  imports: [PhotoCard, StudentProfileForm, StudentProfileSummary, GuardianCard],
   template: `
     <header class="mb-6">
       <p class="font-display text-3xl font-semibold text-tz-title">Tu perfil</p>
@@ -21,10 +23,15 @@ import { StudentProfileSummary } from './components/student-profile-summary';
         <app-student-profile-form />
       </div>
       <div class="space-y-5">
+        @if (auth.user()?.is_minor) {
+          <app-guardian-card />
+        }
         <app-student-profile-summary />
         <app-photo-card hint="Una foto tuya ayuda a que tus profes te reconozcan en clase. JPG, PNG, WEBP o GIF, máx. 10 MB." />
       </div>
     </div>
   `
 })
-export class StudentProfilePage {}
+export class StudentProfilePage {
+  protected readonly auth = inject(AuthService);
+}

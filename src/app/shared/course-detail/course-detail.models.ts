@@ -43,6 +43,8 @@ export interface CourseDetail {
   modality: 'group' | 'individual';
   /** Máximo de integrantes de la clase suelta o del curso completo */
   max_students: number;
+  /** Para quién es: todos, solo adultos o solo menores */
+  audience: 'all' | 'adults' | 'minors';
   gives_certificate: boolean;
   learning_points: string[];
   status: 'draft' | 'published' | 'archived';

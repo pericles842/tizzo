@@ -1,3 +1,4 @@
+import { Audience } from '../../../../core/auth/age';
 /** Tipos del calendario del profe (tizzo.api/src/app/controllers/teaching.controller.ts) */
 
 /** class = clase suelta (una sesión); course = curso (varias clases, da diploma al completarse) */
@@ -42,6 +43,7 @@ export interface TeachingTemplate {
   /** Solo clase suelta */
   duration_min: number | null;
   max_students: number | null;
+  audience: Audience | null;
   gives_certificate: boolean;
   learning_points: string[];
   sessions: TemplateSession[];
@@ -56,6 +58,7 @@ export interface TemplateData {
   price?: number | null;
   duration_min?: number | null;
   max_students?: number | null;
+  audience?: Audience | null;
   gives_certificate?: boolean;
   learning_points?: string[];
   sessions?: Partial<TemplateSession>[];
@@ -66,6 +69,8 @@ export interface NewClass {
   description: string;
   price: number;
   max_students: number;
+  /** Para quién es: todos, solo adultos o solo menores */
+  audience: Audience;
   /** ISO en UTC; la duración sale del rango inicio-fin */
   starts_at: string;
   ends_at: string;
@@ -87,6 +92,7 @@ export interface NewCourse {
   price: number;
   /** Del curso completo, no de cada clase */
   max_students: number;
+  audience: Audience;
   learning_points: string[];
   sessions: NewCourseSession[];
 }

@@ -11,6 +11,8 @@ export const serverRoutes: ServerRoute[] = [
   // Los profes también: valoración, clases por dar y favoritos cambian a cada rato
   { path: 'profes', renderMode: RenderMode.Client },
   { path: 'profes/**', renderMode: RenderMode.Client },
+  // Enlace del correo al representante: depende del token
+  { path: 'representante/**', renderMode: RenderMode.Client },
   // Lo público se prerenderiza (HTML listo para buscadores y carga rápida)
   { path: '**', renderMode: RenderMode.Prerender }
 ];

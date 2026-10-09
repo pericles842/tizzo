@@ -29,6 +29,19 @@
     </div>
   }
 
+  @if (auth.needsGuardian()) {
+    <div class="border-b border-tz-line bg-tz-soft" role="status">
+      <div class="flex flex-wrap items-start gap-3 px-4 py-3 text-sm sm:px-6 lg:px-8">
+        <i class="pi pi-shield mt-0.5 text-tz-subtitle" aria-hidden="true"></i>
+        <p class="min-w-0 flex-1">
+          <strong class="font-semibold text-tz-title">Falta que tu representante confirme.</strong>
+          Le enviamos un correo{{ auth.user()?.guardian?.email ? ' a ' + auth.user()?.guardian?.email : '' }}. Hasta que confirme no puedes reservar ni entrar a las clases.
+        </p>
+        <a routerLink="/app/perfil" class="font-semibold text-tz-subtitle underline-offset-2 hover:underline">Reenviar o cambiar el correo</a>
+      </div>
+    </div>
+  }
+
   <main id="contenido" class="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
     <router-outlet />
   </main>

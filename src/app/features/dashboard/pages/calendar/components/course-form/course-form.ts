@@ -1,3 +1,4 @@
+import { Audience } from '../../../../../../core/auth/age';
 import { Component, ElementRef, OnInit, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { FormArray, FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
@@ -140,6 +141,7 @@ export class CourseForm implements OnInit {
     description: ['', DESCRIPTION_VALIDATORS],
     price: this.fb.control<number | null>(null, PRICE_VALIDATORS),
     max_students: this.fb.control<number | null>(null, STUDENTS_VALIDATORS),
+    audience: this.fb.control<Audience>('all'),
     learning_points: this.fb.control<string[]>([]),
     sessions: this.fb.array<SessionRow>([])
   });
@@ -198,6 +200,7 @@ export class CourseForm implements OnInit {
       description: template.description,
       price: template.price,
       max_students: template.max_students,
+      audience: template.audience ?? 'all',
       learning_points: [...template.learning_points]
     });
     this.sessions.clear();
@@ -224,6 +227,7 @@ export class CourseForm implements OnInit {
         description: value.description.trim(),
         price: value.price as number,
         max_students: value.max_students as number,
+        audience: value.audience,
         learning_points: value.learning_points,
         sessions: value.sessions.map((session) => ({
           title: session.title.trim(),
@@ -259,6 +263,7 @@ export class CourseForm implements OnInit {
         description: description.value.trim(),
         price: price.valid ? price.value : null,
         max_students: max_students.valid ? max_students.value : null,
+        audience: this.form.controls.audience.value,
         learning_points: learning_points.value,
         // Solo las clases que ya tienen título
         sessions: this.sessions.controls
@@ -291,7 +296,8 @@ export class CourseForm implements OnInit {
   private showServerErrors(err: unknown): void {
     const fields = apiFieldErrors(err);
     const c = this.form.controls;
-    applyServerErrors(fields, { title: c.title, description: c.description, price: c.price, max_students: c.max_students, learning_points: c.learning_points });
+    applyServerErrors(fields, { title: c.title, description: c.description, price: c.price, max_students: c.max_students,
+      audience: c.audience, learning_points: c.learning_points });
     this.sessions.controls.forEach((row, index) => {
       const prefix = `sessions.${index}.`;
       applyServerErrors(fields, {

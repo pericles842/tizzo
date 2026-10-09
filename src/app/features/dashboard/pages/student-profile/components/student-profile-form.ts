@@ -2,11 +2,12 @@ import { Component, ElementRef, OnInit, PLATFORM_ID, effect, inject, signal, unt
 import { isPlatformBrowser } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
-import { InputNumber } from 'primeng/inputnumber';
+import { DatePicker } from 'primeng/datepicker';
 import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { Topic } from '../../../../../core/auth/auth.models';
+import { fromIsoDate, toIsoDate } from '../../../../../core/auth/age';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { COUNTRIES } from '../../../../../core/catalog/countries';
 import { apiErrorMessage, apiFieldErrors } from '../../../../../core/http/api-error';
@@ -17,12 +18,12 @@ import { WidgetCard } from '../../../widgets/widget-card/widget-card';
 import { timezoneOptions } from '../student-profile.utils';
 
 /**
- * Datos del estudiante: nombre, teléfono, país, edad, zona horaria y los temas que quiere aprender.
+ * Datos del estudiante: nombre, teléfono, país, fecha de nacimiento (se pone una sola vez), zona horaria y los temas que quiere aprender.
  * Parte de la sesión (AuthService) y al guardar la actualiza, así el header cambia al mismo tiempo.
  */
 @Component({
   selector: 'app-student-profile-form',
-  imports: [ReactiveFormsModule, ButtonDirective, InputNumber, InputText, Message, Select, FieldError, TopicPicker, WidgetCard],
+  imports: [ReactiveFormsModule, ButtonDirective, DatePicker, InputText, Message, Select, FieldError, TopicPicker, WidgetCard],
   template: `
     <app-widget-card heading="Tus datos">
       <p class="-mt-2 mb-5 text-sm">Con esto personalizamos las clases que te mostramos y la hora de tus clases.</p>
@@ -77,9 +78,12 @@ import { timezoneOptions } from '../student-profile.utils';
             <app-field-error errorId="country-error" [control]="form.controls.country_code" />
           </div>
           <div>
-            <label for="age" class="tz-label">Edad</label>
-            <p-inputnumber inputId="age" formControlName="age" [min]="10" [max]="100" [useGrouping]="false" [fluid]="true" />
-            <app-field-error errorId="age-error" [control]="form.controls.age" />
+            <label for="birth-date" class="tz-label">Fecha de nacimiento</label>
+            <p-datepicker inputId="birth-date" formControlName="birth_date" dateFormat="dd/mm/yy" placeholder="dd/mm/aaaa" [maxDate]="today" [showIcon]="true" appendTo="body" [fluid]="true" />
+            @if (form.controls.birth_date.disabled) {
+              <p class="tz-hint">No se puede cambiar. Si está mal, escríbenos.</p>
+            }
+            <app-field-error errorId="birth-date-error" [control]="form.controls.birth_date" />
           </div>
         </div>
 
@@ -142,10 +146,11 @@ export class StudentProfileForm implements OnInit {
     last_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
     phone: ['', [Validators.pattern(PHONE_PATTERN)]],
     country_code: this.fb.control<string | null>(null, Validators.required),
-    age: this.fb.control<number | null>(null, [Validators.required, Validators.min(10), Validators.max(100)]),
+    birth_date: this.fb.control<Date | null>(null, Validators.required),
     timezone: ['', Validators.required]
   });
 
+  protected readonly today = new Date();
   protected readonly email = signal('');
   protected readonly timezones = signal(timezoneOptions(''));
   protected readonly topics = signal<Topic[]>([]);
@@ -172,11 +177,14 @@ export class StudentProfileForm implements OnInit {
             last_name: user.last_name,
             phone: user.phone ?? '',
             country_code: user.country_code,
-            age: user.age,
+            birth_date: user.birth_date ? fromIsoDate(user.birth_date) : null,
             timezone: user.timezone
           },
           { emitEvent: false }
         );
+        // La fecha de nacimiento se pone una sola vez (decide si es menor de edad)
+        if (user.birth_date) this.form.controls.birth_date.disable({ emitEvent: false });
+        else this.form.controls.birth_date.enable({ emitEvent: false });
       });
     });
 
@@ -223,7 +231,7 @@ export class StudentProfileForm implements OnInit {
         last_name: value.last_name.trim(),
         phone: value.phone.trim() || null,
         country_code: value.country_code!,
-        age: value.age!,
+        ...(this.form.controls.birth_date.enabled && value.birth_date ? { birth_date: toIsoDate(value.birth_date) } : {}),
         timezone: value.timezone,
         topic_ids: this.selectedTopics()
       });
@@ -237,7 +245,7 @@ export class StudentProfileForm implements OnInit {
         last_name: controls.last_name,
         phone: controls.phone,
         country_code: controls.country_code,
-        age: controls.age,
+        birth_date: controls.birth_date,
         timezone: controls.timezone
       });
       if (fields['topic_ids']) this.selectedTopicsError.set(fields['topic_ids']);

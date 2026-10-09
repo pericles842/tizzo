@@ -54,8 +54,7 @@ export const DASHBOARD_ROUTES: Routes = [
     canActivate: [studentGuard],
     loadComponent: () => import('./pages/favorite-teachers/favorite-teachers-page').then((m) => m.FavoriteTeachersPage)
   },
-  comingSoon('estudiantes', 'Estudiantes', 'pi pi-user', 'Aquí verás a tus estudiantes y su progreso.'),
-  comingSoon('comunidad', 'Comunidad', 'pi pi-users', 'Un espacio para preguntar, compartir notas y aprender con otros.'),
+  { ...comingSoon('comunidad', 'Comunidad', 'pi pi-users', 'Un espacio para preguntar, compartir notas y aprender con otros.'), canActivate: [studentGuard] },
   // Tareas: el profe las crea y revisa; el estudiante ve las suyas y entrega. 'nueva' va antes de ':uuid'.
   {
     path: 'tareas',
@@ -97,6 +96,6 @@ export const DASHBOARD_ROUTES: Routes = [
     data: { pageTitle: 'Tareas' },
     loadComponent: () => import('./pages/tasks/student/student-task-page').then((m) => m.StudentTaskPage)
   },
-  comingSoon('academias', 'Academias', 'pi pi-graduation-cap', 'Sedes que agrupan a varios profesores. Pronto podrás conocerlas y unirte a una.'),
+  { ...comingSoon('academias', 'Academias', 'pi pi-graduation-cap', 'Sedes que agrupan a varios profesores. Pronto podrás conocerlas y unirte a una.'), canActivate: [studentGuard] },
   { path: '**', redirectTo: '' }
 ];

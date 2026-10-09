@@ -24,6 +24,11 @@ export const routes: Routes = [
         title: 'Clase · Tizzo',
         loadComponent: () => import('./features/catalog/course-page').then((m) => m.CoursePage)
       },
+      {
+        path: 'terminos',
+        title: 'Términos y condiciones · Tizzo',
+        loadComponent: () => import('./pages/terms/terms').then((m) => m.Terms)
+      },
       // Profes: listado con buscador y perfil público de cada uno (clases por dar y favoritos)
       {
         path: 'profes',

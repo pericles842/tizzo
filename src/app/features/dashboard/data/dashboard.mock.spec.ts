@@ -29,17 +29,12 @@ describe('Dashboard: semana, datos por rol y menú', () => {
     expect(getDashboardMock('student', 'Laura').copy.greeting).toBe('Hola, Laura');
   });
 
-  it('el menú muestra Profesores al estudiante y Estudiantes al profe', () => {
+  it('el menú del estudiante tiene Profesores, Comunidad y Academias; el del profe no', () => {
     const student = navForRole('student').map((item) => item.label);
     const teacher = navForRole('teacher').map((item) => item.label);
-    expect(student).toContain('Profesores');
-    expect(student).not.toContain('Estudiantes');
-    expect(teacher).toContain('Estudiantes');
-    expect(teacher).not.toContain('Profesores');
-    // "Perfil" lo ven los dos roles (cada uno su pantalla), justo después de Inicio
-    expect(student[1]).toBe('Perfil');
-    expect(teacher[1]).toBe('Perfil');
-    expect(student.length).toBe(8);
-    expect(teacher.length).toBe(8);
+    expect(student).toEqual(['Inicio', 'Perfil', 'Calendario', 'Certificados', 'Profesores', 'Comunidad', 'Tareas', 'Academias']);
+    expect(teacher).toEqual(['Inicio', 'Perfil', 'Calendario', 'Certificados', 'Tareas']);
+    // El número de Tareas lo pone el menú según las tareas pendientes: no viene fijo
+    expect(navForRole('student').every((item) => item.badge === undefined)).toBeTrue();
   });
 });

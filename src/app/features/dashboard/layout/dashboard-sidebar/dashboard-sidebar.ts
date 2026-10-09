@@ -1,9 +1,13 @@
-import { Component, computed, inject, output } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, DestroyRef, PLATFORM_ID, computed, inject, output, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
 import { Badge } from 'primeng/badge';
 import { ButtonDirective } from 'primeng/button';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { Logo } from '../../../../shared/logo/logo';
+import { studentTaskItems } from '../../data/dashboard.live';
+import { TasksService } from '../../pages/tasks/tasks.service';
 import { navForRole } from '../dashboard-nav';
 
 /** Menú lateral del dashboard: logo, opciones según el rol y "Cerrar sesión" */
@@ -32,7 +36,7 @@ import { navForRole } from '../dashboard-nav';
                 <i [class]="item.icon" class="text-base" aria-hidden="true"></i>
                 <span class="flex-1">{{ item.label }}</span>
                 @if (item.badge) {
-                  <p-badge [value]="item.badge" [attr.aria-label]="item.badge + ' pendientes'" />
+                  <p-badge [value]="item.badge" [attr.aria-label]="item.badge + ' tareas pendientes'" />
                 }
               </a>
             </li>
@@ -62,5 +66,35 @@ export class DashboardSidebar {
   readonly navigate = output<void>();
   readonly logout = output<void>();
 
-  protected readonly items = computed(() => navForRole(this.auth.user()?.role));
+  private readonly tasksService = inject(TasksService);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** Tareas pendientes por entregar o responder (solo el estudiante; el profe no ve número) */
+  private readonly pendingTasks = signal(0);
+
+  protected readonly items = computed(() =>
+    navForRole(this.auth.user()?.role).map((item) => (item.route === '/app/tareas' && this.pendingTasks() > 0 ? { ...item, badge: this.pendingTasks() } : item))
+  );
+
+  constructor() {
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+    void this.refreshPending();
+    // Al cambiar de pantalla se vuelve a contar (entregar una tarea baja el número)
+    const sub = this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => void this.refreshPending());
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
+  }
+
+  private async refreshPending(): Promise<void> {
+    if (this.auth.user()?.role !== 'student') {
+      this.pendingTasks.set(0);
+      return;
+    }
+    try {
+      const { tasks } = await this.tasksService.myTasks();
+      this.pendingTasks.set(studentTaskItems(tasks, new Date()).total);
+    } catch {
+      // sin número si no se pudo contar
+    }
+  }
 }

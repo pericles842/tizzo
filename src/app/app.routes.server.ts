@@ -13,6 +13,9 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'profes/**', renderMode: RenderMode.Client },
   // Enlace del correo al representante: depende del token
   { path: 'representante/**', renderMode: RenderMode.Client },
+  // Verificar un diploma consulta el API con el código
+  { path: 'verificar', renderMode: RenderMode.Client },
+  { path: 'verificar/**', renderMode: RenderMode.Client },
   // Lo público se prerenderiza (HTML listo para buscadores y carga rápida)
   { path: '**', renderMode: RenderMode.Prerender }
 ];

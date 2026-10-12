@@ -45,7 +45,13 @@ export const DASHBOARD_ROUTES: Routes = [
     data: { pageTitle: 'Calendario' },
     loadComponent: () => import('./pages/student-calendar/student-calendar-page').then((m) => m.StudentCalendarPage)
   },
-  comingSoon('certificados', 'Certificados', 'pi pi-verified', 'Aquí podrás ver y descargar tus diplomas.'),
+  {
+    // Estudiantes: sus diplomas para descargar. Profes: los que emitieron.
+    path: 'certificados',
+    title: 'Certificados · Tizzo',
+    data: { pageTitle: 'Certificados' },
+    loadComponent: () => import('./pages/certificates/certificates-page').then((m) => m.CertificatesPage)
+  },
   {
     // Estudiantes: sus profes favoritos
     path: 'profesores',

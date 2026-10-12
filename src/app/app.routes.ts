@@ -41,6 +41,17 @@ export const routes: Routes = [
         title: 'Autorización del representante · Tizzo',
         loadComponent: () => import('./features/guardian/guardian-page').then((m) => m.GuardianPage)
       },
+      // Verificación pública de un diploma (el QR del diploma lleva aquí)
+      {
+        path: 'verificar',
+        title: 'Verificar diploma · Tizzo',
+        loadComponent: () => import('./features/certificates/verify-page').then((m) => m.VerifyPage)
+      },
+      {
+        path: 'verificar/:code',
+        title: 'Verificar diploma · Tizzo',
+        loadComponent: () => import('./features/certificates/verify-page').then((m) => m.VerifyPage)
+      },
       {
         path: 'profes/:uuid',
         title: 'Profe · Tizzo',

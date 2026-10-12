@@ -70,6 +70,7 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
   room/                      /sala/:courseUuid (pantalla completa, authGuard): room-page con Daily en modo call object y la UI de Tizzo
                              (sala cerrada con la próxima clase, lobby, llamada, salió, terminó), video-tile (video o iniciales, audio,
                              "Silenciar" para el profe), room.service (estado y token; el token nunca se guarda)
+  certificates/              certificates.service/models (API de diplomas), verify-page (públicas /verificar y /verificar/:code, a donde lleva el QR; RenderMode.Client) y certificate-date
   teachers/                  público: /profes (teachers-page: buscador y tarjetas, en la URL ?q=&pagina=) y /profes/:uuid (teacher-page: perfil público con TODAS sus clases y cursos por dar desde /catalog?teacher= y el botón de favoritos); teachers.service. Se renderizan en el navegador (RenderMode.Client)
   dashboard/                 área privada /app (diseño de Figma)
     dashboard.routes.ts      rutas hijas: '' (Inicio), calendario, certificados, profesores | estudiantes, comunidad, tareas, academias
@@ -91,6 +92,7 @@ features/    áreas grandes con su propio layout, rutas, páginas, widgets y dat
       student-calendar/      "Calendario" del estudiante (misma ruta; `teacherMatch` manda al profe al suyo): solo lectura, sus clases
                              (GET /student/calendar) y class-info-dialog (datos, profe, EN VIVO y "Entrar a la sala"). Usa calendar-page.css.
       favorite-teachers/     "Profesores" del estudiante (studentGuard): sus profes favoritos con app-teacher-card [removable]
+      certificates/          "Certificados" (/app/certificados, ambos roles): el estudiante ve y descarga sus diplomas, **agrupados por clase o curso** como el profe (vista previa en miniatura con `p-image`, que se amplía al tocarla; el PDF es privado: enlace al API con la cookie); el profe ve lo emitido y un aviso si le falta firma o foto
       tasks/                 "Tareas" (misma ruta para los dos roles, con teacherMatch): tasks.models, tasks.service (API y enlaces a los PDF privados), tasks.utils (fechas "Vence hoy a las…", etiquetas de estado SIN verde: entregada = primario violeta, pendiente = secondary, vence en <24 h = warn, vencida = danger);
                              components/pdf-dropzone (arrastrar o elegir un PDF, máx. 10 MB). teacher/: teacher-tasks-page (lista y filtros), task-editor-page (/tareas/nueva y /tareas/:uuid/editar: tarjetas
                              numeradas tipo → alcance (curso → clase) → detalles → fecha → PDF, panel "Se asigna a" + vista previa del aviso + acciones; el PDF se sube al guardar), teacher-task-detail-page

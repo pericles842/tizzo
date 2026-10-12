@@ -59,6 +59,7 @@ import { RangeFields, endAfterStart } from '../range-fields/range-fields';
         <p-toggleswitch inputId="class-certificate" formControlName="gives_certificate" />
         <label for="class-certificate" class="text-sm font-medium text-tz-title">Esta clase da diploma</label>
       </div>
+      <p class="-mt-3 text-xs">El diploma lleva tu firma y tu foto de perfil: súbelas en "Perfil" antes de ofrecerlo. Se emite a quien asista y complete las tareas.</p>
 
       <div class="flex flex-wrap items-center gap-3 pt-2">
         <button pButton type="submit" label="Programar clase" icon="pi pi-calendar-plus" [loading]="saving()" [disabled]="saving()"></button>
